@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: office_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: my_office_db
+      POSTGRES_USER: n8n_user
+      POSTGRES_PASSWORD: n8n_secure_pass_2026
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Automatically initialize the database with DDL schemas on first startup
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5435:5432"
+    # RAM and Performance Optimization for Postgres
+    # shared_buffers: 256MB (optimizes memory cache for active queries)
+    # effective_cache_size: 768MB (tells planner how much memory is available for caching)
+    command: >
+      postgres 
+      -c shared_buffers=256MB 
+      -c effective_cache_size=768MB 
+      -c work_mem=16MB 
+      -c maintenance_work_mem=64MB 
+      -c max_connections=100
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n_user -d my_office_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+    driver: local

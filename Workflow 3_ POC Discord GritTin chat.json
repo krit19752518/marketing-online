@@ -1,0 +1,212 @@
+{
+  "name": "Workflow 3: POC Discord GritTin chat (Updated)",
+  "nodes": [
+    {
+      "parameters": {
+        "channelIds": [],
+        "pattern": "regex",
+        "value": ".*",
+        "options": {}
+      },
+      "type": "n8n-nodes-discord.discordTrigger",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        200
+      ],
+      "id": "discord-trigger",
+      "name": "Discord Trigger",
+      "credentials": {
+        "discordApi": {
+          "id": "a2b8e3df-498c-4f7d-8be9-cf4d8ebcd96b",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "let txt = $json.content;\n txt = txt.replace(/<@!\\d+>/g, \"\"); // remove mention\n txt = txt.replace(/:[a-z_]+:/g, \"\"); // remove emoji\n txt = txt.replace(/[`*_~]/g, \"\"); // remove markdown formatting\n txt = txt.trim().substring(0, 500);\n return { cleanText: txt };"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        80,
+        200
+      ],
+      "id": "sanitize",
+      "name": "Sanitization"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT role_name, experience_years FROM user_role WHERE user_id = $json.authorId;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [
+        260,
+        200
+      ],
+      "id": "role_lookup",
+      "name": "User Role Lookup",
+      "credentials": {
+        "sqlite": {
+          "id": "sqlite-db",
+          "name": "SQLite DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "functionCode": "const role = $json[0]?.role_name || \"Managing Director\";\n const exp = $json[0]?.experience_years || 5;\n const question = $json.cleanText;\n const prompt = `คุณคือ ${role} ที่มีประสบการณ์ ${exp} ปี ฉันอยากทำระบบโพสต์คอนเทนต์ขายของใน Facebook โดยใช้ AI เข้ามาช่วยเพิ่มรายได้ จะต้องทำอย่างไร? ให้ตอบในมุมมองของ ${role} และเสนอไอเดียให้ทีมงานทำต่อได้\n\nคำถามผู้ใช้: ${question}`;\n return { prompt };"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        440,
+        200
+      ],
+      "id": "prompt_builder",
+      "name": "Prompt Builder"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/v1/completions",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {
+          "headers": {
+            "Authorization": "Bearer {{$env.GPT_OSS_API_KEY}}",
+            "Content-Type": "application/json"
+          }
+        },
+        "bodyParametersJson": "{\n  \"model\": \"gpt-oss-120b\",\n  \"prompt\": \"{{$json.prompt}}\",\n  \"max_tokens\": 500,\n  \"temperature\": 0.3\n}"
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        620,
+        200
+      ],
+      "id": "gpt_request",
+      "name": "GPT‑OSS Request"
+    },
+    {
+      "parameters": {
+        "functionCode": "return { reply: $json.choices[0].text };"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        800,
+        200
+      ],
+      "id": "extract_response",
+      "name": "Extract Response"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": "={{ $json.session_id }}",
+        "messageType": "text",
+        "text": "={{ $json.reply }}"
+      },
+      "type": "n8n-nodes-discord.discord",
+      "typeVersion": 1,
+      "position": [
+        980,
+        200
+      ],
+      "id": "discord-send-message",
+      "name": "Discord Send Message",
+      "credentials": {
+        "discordApi": {
+          "id": "a2b8e3df-498c-4f7d-8be9-cf4d8ebcd96b",
+          "name": "Discord Bot account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "discord-trigger": {
+      "main": [
+        [
+          {
+            "node": "sanitize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "sanitize": {
+      "main": [
+        [
+          {
+            "node": "role_lookup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "role_lookup": {
+      "main": [
+        [
+          {
+            "node": "prompt_builder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prompt_builder": {
+      "main": [
+        [
+          {
+            "node": "gpt_request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gpt_request": {
+      "main": [
+        [
+          {
+            "node": "extract_response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "extract_response": {
+      "main": [
+        [
+          {
+            "node": "discord-send-message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c07f477c-5b94-4a38-ab3c-eea059137e67",
+  "meta": {
+    "instanceId": "941b6de2e7fc8454613dec48b10b1cb7763875a6746c1034d4db0f4696bea4b6"
+  },
+  "nodeGroups": [],
+  "id": "pocDiscordGritTin",
+  "tags": []
+}

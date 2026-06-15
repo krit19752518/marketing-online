@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: content_marketing_db
+    restart: always
+    environment:
+      POSTGRES_DB: content_marketing
+      POSTGRES_USER: n8n_user
+      POSTGRES_PASSWORD: n8n_secure_password_99
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/init.sql:ro # Automatically initializes schema on first run
+    deploy:
+      resources:
+        limits:
+          memory: 2g # Prevents PostgreSQL from consuming excessive host RAM
+        reservations:
+          memory: 512m
+    # PostgreSQL Memory Tuning & Configuration for Production Workloads:
+    # - shared_buffers: 512MB (Recommended ~25% of dedicated container RAM)
+    # - effective_cache_size: 1536MB (75% of container memory allocation)
+    # - work_mem: 16MB (Sufficient for complex queries without disk sorting)
+    # - maintenance_work_mem: 256MB (Speeds up index creation & clean-up tasks)
+    # - max_connections: 100 (Balanced for multiple concurrent n8n threads/workers)
+    command: >
+      postgres
+      -c shared_buffers=512MB
+      -c effective_cache_size=1536MB
+      -c work_mem=16MB
+      -c maintenance_work_mem=256MB
+      -c min_wal_size=1GB
+      -c max_wal_size=4GB
+      -c checkpoint_completion_target=0.9
+      -c checkpoint_timeout=15min
+      -c max_connections=100
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U n8n_user -d content_marketing"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: n8nio/n8n:1.123.16
+    container_name: content_marketing_n8n
+    restart: always
+    ports:
+      - "5678:5678"
+    environment:
+      # Database Backend configuration
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=content_marketing
+      - DB_POSTGRESDB_USER=n8n_user
+      - DB_POSTGRESDB_PASSWORD=n8n_secure_password_99
+      
+      # Pruning configuration (Essential to prevent SQLite/Postgres disk bloating and memory leaks)
+      - EXECUTIONS_DATA_PRUNE=true # Enables automated logs removal
+      - EXECUTIONS_DATA_MAX_AGE=168 # Keep execution logs for max 7 days (168 hours)
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=50000 # Keep maximum 50,000 runs inside DB
+      
+      # n8n Performance & Scaling Configurations
+      - N8N_ENCRYPTION_KEY=super_secret_encryption_key_12345
+      - N8N_DIAGNOSTICS_ENABLED=false # Prevents external telemetry overhead
+      - N8N_METRICS=true # Exposes Prometheus-compatible endpoints if needed
+      
+      # Node and Process optimization (Helps manage memory stability)
+      - NODE_OPTIONS=--max-old-space-size=1536 # Restricts Node.js heap to 1.5GB within the 2GB limit
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./shared-media:/data/shared-media # Volume mapped for temporary file/asset processing
+      - /home/krit/my-office/n8n-ai-agent/shopee-getproduct-csv/product-data:/data/shopee-raw-data:rw
+      - /home/krit/my-office/n8n-ai-agent/tiktok-flow:/data/tiktok-flow:rw
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 2g # Hard memory limit to prevent memory leakage or OOM crash on host
+        reservations:
+          memory: 512m
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local
+  n8n_data:
+    driver: local

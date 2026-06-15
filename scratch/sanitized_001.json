@@ -1,0 +1,235 @@
+{
+  "connections": {
+    "node_name_0": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "node_name_4",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "node_name_1": {
+      "ai_languageModel": [
+        [
+          {
+            "index": 0,
+            "node": "node_name_0",
+            "type": "ai_languageModel"
+          }
+        ]
+      ]
+    },
+    "node_name_2": {
+      "ai_memory": [
+        [
+          {
+            "index": 0,
+            "node": "node_name_0",
+            "type": "ai_memory"
+          }
+        ]
+      ]
+    },
+    "node_name_3": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "node_name_6",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "node_name_4": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "node_name_5",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "node_name_6": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "node_name_0",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "node_name_7": {
+      "main": [
+        [
+          {
+            "index": 0,
+            "node": "node_name_3",
+            "type": "main"
+          }
+        ]
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "node_id_0",
+      "name": "node_name_0",
+      "parameters": {
+        "options": {},
+        "promptType": "define",
+        "text": "={{ $json.text }}"
+      },
+      "position": [
+        192,
+        16
+      ],
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3
+    },
+    {
+      "credentials": {
+        "googlePalmApi": {
+          "id": "cred_id_placeholder",
+          "name": "cred_name_placeholder"
+        }
+      },
+      "id": "node_id_1",
+      "name": "node_name_1",
+      "parameters": {
+        "modelName": "models/gemini-3.1-flash-lite",
+        "options": {}
+      },
+      "position": [
+        80,
+        224
+      ],
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1
+    },
+    {
+      "id": "node_id_2",
+      "name": "node_name_2",
+      "parameters": {},
+      "position": [
+        240,
+        240
+      ],
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3
+    },
+    {
+      "id": "node_id_3",
+      "name": "node_name_3",
+      "parameters": {
+        "jsCode": "// Preserve all input fields and add clean text\nreturn {\n  ...$json,\n  text: ($json.content || \"\").replace(/<@!?(\\d+)>/g, \"\").trim()\n};"
+      },
+      "position": [
+        -320,
+        16
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "id": "node_id_4",
+      "name": "node_name_4",
+      "parameters": {
+        "jsCode": "const chunks = [];\nconst text = $json.output || \"\";\nconst maxLength = 1900;\n\nif (text.length <= maxLength) {\n  chunks.push(text);\n} else {\n  let currentChunk = \"\";\n  const lines = text.split('\\n');\n  for (const line of lines) {\n    if ((currentChunk + \"\\n\" + line).length > maxLength) {\n      if (currentChunk) chunks.push(currentChunk);\n      currentChunk = line;\n      while (currentChunk.length > maxLength) {\n        chunks.push(currentChunk.substring(0, maxLength));\n        currentChunk = currentChunk.substring(maxLength);\n      }\n    } else {\n      currentChunk = currentChunk ? (currentChunk + \"\\n\" + line) : line;\n    }\n  }\n  if (currentChunk) {\n    chunks.push(currentChunk);\n  }\n}\n\nreturn chunks.map(chunk => ({\n  ...$json,\n  output: chunk\n}));"
+      },
+      "position": [
+        512,
+        -128
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "credentials": {
+        "discordBotApi": {
+          "id": "cred_id_placeholder",
+          "name": "cred_name_placeholder"
+        }
+      },
+      "id": "node_id_5",
+      "name": "node_name_5",
+      "parameters": {
+        "channelId": "channel_placeholder",
+        "content": "={{ $json.output }}",
+        "guildId": "guild_placeholder",
+        "options": {},
+        "resource": "message"
+      },
+      "position": [
+        752,
+        16
+      ],
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "webhookId": "1ba58198-e9de-483e-98d5-8d625143b5d6"
+    },
+    {
+      "id": "node_id_6",
+      "name": "node_name_6",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9a20ca8f-5bc0-4bd7-aafb-0b86d203c52a",
+              "name": "text",
+              "type": "string",
+              "value": "={{ $json.text }}"
+            },
+            {
+              "id": "2b6eca89-b4ab-4a77-91ce-bceaa22d4f03",
+              "name": "sessionId",
+              "type": "string",
+              "value": "={{ $('MD Discord DM Trigger').item.json.authorId }}"
+            },
+            {
+              "id": "channelId-id-123",
+              "name": "channelId",
+              "type": "string",
+              "value": "={{ $json.channelId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "position": [
+        -96,
+        16
+      ],
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4
+    },
+    {
+      "credentials": {
+        "discordBotTriggerApi": {
+          "id": "cred_id_placeholder",
+          "name": "cred_name_placeholder"
+        }
+      },
+      "id": "node_id_7",
+      "name": "node_name_7",
+      "parameters": {
+        "additionalFields": {},
+        "pattern": "every",
+        "type": "direct-message"
+      },
+      "position": [
+        -544,
+        16
+      ],
+      "type": "n8n-nodes-discord-trigger.discordTrigger",
+      "typeVersion": 1
+    }
+  ]
+}

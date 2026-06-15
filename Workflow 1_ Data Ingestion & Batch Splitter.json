@@ -1,0 +1,543 @@
+{
+  "name": "Workflow 1: Data Ingestion & Batch Splitter",
+  "nodes": [
+    {
+      "parameters": {
+        "channelIds": [],
+        "pattern": "regex",
+        "value": ".*",
+        "options": {}
+      },
+      "type": "n8n-nodes-discord.discordTrigger",
+      "typeVersion": 1,
+      "position": [
+        -320,
+        16
+      ],
+      "id": "discord-trigger-node",
+      "name": "Discord Trigger",
+      "credentials": {
+        "discordApi": {
+          "id": "a2b8e3df-498c-4f7d-8be9-cf4d8ebcd96b",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT skill_set, context_data, learned_logic FROM agent_knowledge WHERE agent_id = 'Agent-001';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        -112,
+        16
+      ],
+      "id": "54dea087-4df4-4d7e-a563-beb8ab994b6a",
+      "name": "Fetch Agent Profile",
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT role, message FROM chat_history WHERE session_id = $1 ORDER BY created_at DESC LIMIT 10;",
+        "options": {
+          "queryReplacement": "={{ [ $('Discord Trigger').item.json.channelId || 'test_session_001' ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        96,
+        16
+      ],
+      "id": "9036ee57-3344-40ea-9e75-36ff9a189ac6",
+      "name": "Fetch Recent Chat History",
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const triggerData = $('Discord Trigger').item.json || {};\n\n// Stop execution if the message is from a bot\nif (triggerData.author && triggerData.author.bot) {\n  return [];\n}\n\nconst session_id = triggerData.channelId || 'test_session_001';\nconst message = triggerData.content || '';\nconst isSaveCommand = message.startsWith('/save');\nconst action = isSaveCommand ? 'save_spec' : '';\nconst formatted_spec = '';\n\n// Fetch Recent Chat History outputs\nconst historyItems = $input.all();\n\n// Reverse history to keep it in chronological order and filter out empty objects\nconst formattedHistory = historyItems\n  .filter(item => item && item.json && item.json.role)\n  .map(item => ({\n    role: item.json.role,\n    message: item.json.message\n  }))\n  .reverse();\n\nconst agentProfile = $('Fetch Agent Profile').item.json || {};\n\n// Detect custom command like /fix, /logic, /learn\nconst isCommand = message.startsWith('/fix') || message.startsWith('/logic') || message.startsWith('/learn');\n\n// ล้างคำสั่งพวก /logic, /fix, /learn ออก เหลือแค่ตัวเนื้อหาคำสอน\nconst cleanMessage = message.replace(/^\\/(logic|fix|learn)\\s*/i, ''); \n\nreturn {\n  session_id,\n  message,\n  clean_message: cleanMessage,\n  chat_history: formattedHistory,\n  agent_profile: agentProfile,\n  is_command: isCommand,\n  action,\n  formatted_spec\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        304,
+        16
+      ],
+      "id": "7f4eb1f3-4b94-41ba-b2b3-56339828041d",
+      "name": "JavaScript Parser",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "none",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.is_command }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "save_spec",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.found }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "none",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.is_command }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "save_spec",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEquals"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.found }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "false"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "none",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "save_spec",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "none",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.found }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        16
+      ],
+      "id": "b9d32019-f9e4-4ca1-9742-c3896c229ec6",
+      "name": "Switch",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE agent_knowledge SET learned_logic = CONCAT(learned_logic, E'\\n- ', $1), updated_at = NOW() WHERE agent_id = 'Agent-001';",
+        "options": {
+          "queryReplacement": "={{ [ $json.clean_message || '' ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        720,
+        150
+      ],
+      "id": "update-learned-logic",
+      "name": "Update learned_logic",
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "qixkxq2AzNhzxTLx",
+          "mode": "list"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -100
+      ],
+      "id": "call-wf-2",
+      "name": "Call Wf 2"
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  session_id: $input.item.json.session_id,\n  message: \"รับทราบครับ PM บันทึก Logic การทำงานชุดนี้เข้าสู่ระบบ PostgreSQL เรียบร้อยแล้ว!\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        150
+      ],
+      "id": "format-command-response",
+      "name": "Format Command Response",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": "={{ $json.session_id }}",
+        "messageType": "text",
+        "text": "={{ $json.message || $json.ai_response }}"
+      },
+      "type": "n8n-nodes-discord.discord",
+      "typeVersion": 1,
+      "position": [
+        1190,
+        16
+      ],
+      "id": "discord-send-message",
+      "name": "Discord Send Message",
+      "credentials": {
+        "discordApi": {
+          "id": "a2b8e3df-498c-4f7d-8be9-cf4d8ebcd96b",
+          "name": "Discord Bot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "WITH last_response AS (\n  SELECT message FROM chat_history \n  WHERE session_id = $2 AND role = 'assistant' \n  ORDER BY created_at DESC LIMIT 1\n),\nlast_question AS (\n  SELECT message FROM chat_history\n  WHERE session_id = $2 AND role = 'user'\n  ORDER BY created_at DESC LIMIT 1\n)\nINSERT INTO project_specs (session_id, formatted_spec, status) \nVALUES (\n  $2, \n  COALESCE(NULLIF($1, ''), (SELECT message FROM last_response), ''), \n  'draft'\n) \nON CONFLICT (session_id) \nDO UPDATE SET \n  formatted_spec = EXCLUDED.formatted_spec, \n  updated_at = NOW();\n\nWITH last_response AS (\n  SELECT message FROM chat_history \n  WHERE session_id = $2 AND role = 'assistant' \n  ORDER BY created_at DESC LIMIT 1\n),\nlast_question AS (\n  SELECT message FROM chat_history\n  WHERE session_id = $2 AND role = 'user'\n  ORDER BY created_at DESC LIMIT 1\n)\nINSERT INTO qa_memory (session_id, question, answer) \nVALUES (\n  $2, \n  COALESCE(NULLIF($3, ''), (SELECT message FROM last_question), 'Default Question'), \n  COALESCE(NULLIF($1, ''), (SELECT message FROM last_response), '')\n) \nON CONFLICT (session_id, question) \nDO UPDATE SET \n  answer = EXCLUDED.answer, \n  updated_at = NOW();",
+        "options": {
+          "queryReplacement": "={{ [ $json.formatted_spec, $json.session_id, $json.message ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        720,
+        400
+      ],
+      "id": "update-spec-db",
+      "name": "Update Spec DB",
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return {\n  session_id: $input.item.json.session_id,\n  message: \"บันทึกเอกสาร Specification เรียบร้อยแล้วครับ!\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        940,
+        400
+      ],
+      "id": "format-save-response",
+      "name": "Format Save Response",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT answer FROM qa_memory WHERE similarity(question, $1) > 0.5 ORDER BY similarity(question, $1) DESC LIMIT 1;",
+        "options": {
+          "queryReplacement": "={{ [ $json.message ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        510,
+        -180
+      ],
+      "id": "check-qa-memory-node",
+      "name": "Check QA Memory",
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const memoryResult = $input.item.json || {};\nconst parserResult = $('JavaScript Parser').item.json || {};\n\nconst message = parserResult.message || '';\nconst isFinalCommand = message.includes('ส่งให้ ai สร้างเอกสาร user requirement') || message.includes('ส่งให้ ai สร้างเอกสาร');\n\nif (memoryResult.answer && !isFinalCommand) {\n  return {\n    found: true,\n    session_id: parserResult.session_id,\n    message: parserResult.message,\n    ai_response: memoryResult.answer,\n    formatted_spec: memoryResult.answer,\n    is_command: parserResult.is_command,\n    action: parserResult.action\n  };\n} else {\n  return {\n    found: false,\n    ...parserResult\n  };\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        -180
+      ],
+      "id": "determine-next-step-node",
+      "name": "Determine Next Step",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Discord Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch Agent Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Agent Profile": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recent Chat History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Chat History": {
+      "main": [
+        [
+          {
+            "node": "JavaScript Parser",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JavaScript Parser": {
+      "main": [
+        [
+          {
+            "node": "Check QA Memory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Call Wf 2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update learned_logic",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Spec DB",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Discord Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Wf 2": {
+      "main": [
+        [
+          {
+            "node": "Discord Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update learned_logic": {
+      "main": [
+        [
+          {
+            "node": "Format Command Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Command Response": {
+      "main": [
+        [
+          {
+            "node": "Discord Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Spec DB": {
+      "main": [
+        [
+          {
+            "node": "Format Save Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Save Response": {
+      "main": [
+        [
+          {
+            "node": "Discord Send Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check QA Memory": {
+      "main": [
+        [
+          {
+            "node": "Determine Next Step",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Next Step": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "f2e853a0-944f-4389-a0c2-680c4697d1de",
+  "meta": {
+    "instanceId": "941b6de2e7fc8454613dec48b10b1cb7763875a6746c1034d4db0f4696bea4b6"
+  },
+  "nodeGroups": [],
+  "id": "AS581qRYgzWYz9hR",
+  "tags": []
+}

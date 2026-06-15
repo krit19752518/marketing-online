@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+
+  project_manager:
+    image: node:20-alpine
+    container_name: bot_project_manager
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: node index.js
+    environment:
+      - DISCORD_TOKEN=$PM_DISCORD_TOKEN
+
+  system_analyst:
+    image: node:20-alpine
+    container_name: bot_system_analyst
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: node index.js
+    environment:
+      - DISCORD_TOKEN=$SA_DISCORD_TOKEN
+
+  dev_leader:
+    image: node:20-alpine
+    container_name: bot_dev_leader
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: node index.js
+    environment:
+      - DISCORD_TOKEN=$DL_DISCORD_TOKEN
+
+  programmer_001:
+    image: node:20-alpine
+    container_name: bot_programmer_001
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: node index.js
+    environment:
+      - DISCORD_TOKEN=$P1_DISCORD_TOKEN
+
+  programmer_002:
+    image: node:20-alpine
+    container_name: bot_programmer_002
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: node index.js
+    environment:
+      - DISCORD_TOKEN=$P2_DISCORD_TOKEN
+
+  tester_001:
+    image: node:20-alpine
+    container_name: bot_tester_001
+    restart: unless-stopped
+    volumes:
+      - .:/app
+    working_dir: /app
+    command: node index.js
+    environment:
+      - DISCORD_TOKEN=$T1_DISCORD_TOKEN

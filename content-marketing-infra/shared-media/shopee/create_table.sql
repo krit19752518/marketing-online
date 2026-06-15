@@ -1,0 +1,30 @@
+CREATE TABLE IF NOT EXISTS shopee_discount_products (
+    itemid BIGINT PRIMARY KEY,
+    shopid BIGINT,
+    title TEXT,
+    price NUMERIC,
+    sale_price NUMERIC,
+    discount_percentage INT,
+    stock INT,
+    item_sold INT,
+    item_rating NUMERIC,
+    likes_count INT,
+    is_preferred_shop VARCHAR(50),
+    is_official_shop VARCHAR(50),
+    has_lowest_price_guarantee VARCHAR(10),
+    image_link TEXT,
+    product_link TEXT,
+    product_short_link TEXT,
+    global_category1 TEXT,
+    global_category2 TEXT,
+    global_category3 TEXT,
+    shop_name TEXT,
+    seller_name TEXT,
+    global_brand TEXT,
+    description TEXT,
+    model_names TEXT,
+    model_prices TEXT,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_shopee_discount_percentage ON shopee_discount_products (discount_percentage);

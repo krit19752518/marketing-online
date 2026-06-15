@@ -1,0 +1,32 @@
+{
+  "providers": [
+    {
+      "name": "Google",
+      "vendor": "gemini",
+      "apiKey": "${input:chat.lm.secret.-1a347117}",
+      "status": "configured"
+    },
+    {
+      "name": "Ollama",
+      "vendor": "ollama",
+      "url": "http://localhost:11434",
+      "status": "active",
+      "models": [
+        {
+          "id": "gemma2:2b",
+          "name": "Gemma 2 (2B)",
+          "endpoint": "/api/generate",
+          "description": "Fast, lightweight model for quick caption generation"
+        }
+      ],
+      "notes": "Local inference engine - no API key needed"
+    }
+  ],
+  "active_provider": "ollama",
+  "fallback_provider": "gemini",
+  "metadata": {
+    "created": "2026-06-09",
+    "updated": "2026-06-09",
+    "environment": "shopee-affiliate-captions"
+  }
+}

@@ -1,0 +1,181 @@
+{
+  "name": "Shopee Full Automation Pipeline (Final)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5ae73f47-d614-4742-be28-29b660b319dd",
+      "name": "เริ่มต้น",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT itemid, title, sale_price, discount_percentage FROM shopee_1get1_facebook WHERE status = 'pending' LIMIT 20;",
+        "options": {}
+      },
+      "id": "36362636-be40-480b-ab7d-017b0015a4c7",
+      "name": "ดึงสินค้า Pending",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -144,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "158933b4-3fea-42ce-899e-2f2a964d402c",
+      "name": "ทีละชิ้น",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        48,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE shopee_1get1_facebook SET ai_caption = $1, status = 'done', processed_at = NOW() WHERE itemid = $2::bigint;",
+        "options": {}
+      },
+      "id": "b75bb4d0-0248-43b9-be11-3b841ea0c993",
+      "name": "บันทึก Caption",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        816,
+        320
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        384,
+        288
+      ],
+      "id": "e217ad2e-190f-4bb8-b868-3a084016c580",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        368,
+        528
+      ],
+      "id": "656cbbcc-e7a6-47be-8b57-848db3d3df7c",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "w2G5l1efn5AKHGrq",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "เริ่มต้น": {
+      "main": [
+        [
+          {
+            "node": "ดึงสินค้า Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ดึงสินค้า Pending": {
+      "main": [
+        [
+          {
+            "node": "ทีละชิ้น",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ทีละชิ้น": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ดึงสินค้า Pending",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "บันทึก Caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "77cf46b4-7b7b-4799-9544-34ee09fb757e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "941b6de2e7fc8454613dec48b10b1cb7763875a6746c1034d4db0f4696bea4b6"
+  },
+  "id": "NvyfWvhAG0ZT8mXE",
+  "tags": []
+}

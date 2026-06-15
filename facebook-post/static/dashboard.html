@@ -1,0 +1,1839 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <title>Shopee Affiliate AI Caption Dashboard</title>
+    <!-- Modern Premium Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --bg-color: #0b0f19;
+        --card-bg: #151c2c;
+        --border-color: #243049;
+        --text-primary: #f3f4f6;
+        --text-secondary: #9ca3af;
+        --primary: #6366f1;
+        --primary-hover: #4f46e5;
+        --success: #10b981;
+        --success-hover: #059669;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --danger-hover: #dc2626;
+        --info: #06b6d4;
+        --transition-speed: 0.2s;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: var(--bg-color);
+        color: var(--text-primary);
+        font-family: 'Outfit', 'Sarabun', sans-serif;
+        padding: 24px;
+        line-height: 1.5;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 24px;
+        border-bottom: 1px solid var(--border-color);
+        margin-bottom: 24px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        background: linear-gradient(to right, #818cf8, #c084fc);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .controls {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        padding: 16px;
+        border-radius: 12px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      }
+
+      .control-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      select, input[type="file"] {
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 8px 12px;
+        border-radius: 8px;
+        outline: none;
+        font-family: inherit;
+        font-size: 0.9rem;
+        transition: border-color var(--transition-speed);
+      }
+
+      select:focus {
+        border-color: var(--primary);
+      }
+
+      button {
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 500;
+        font-family: inherit;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background var(--transition-speed), transform var(--transition-speed);
+      }
+
+      button:hover {
+        background: var(--primary-hover);
+      }
+
+      button:active {
+        transform: scale(0.98);
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+      }
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .btn-success {
+        background: var(--success);
+      }
+      .btn-success:hover {
+        background: var(--success-hover);
+      }
+
+      .btn-danger {
+        background: var(--danger);
+      }
+      .btn-danger:hover {
+        background: var(--danger-hover);
+      }
+
+      .btn-copy-image {
+        background: var(--primary);
+        border: 1px solid var(--border-color);
+        color: white;
+        font-weight: 500;
+        font-size: 0.8rem;
+        padding: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        cursor: pointer;
+      }
+      .btn-copy-image:hover {
+        background: var(--primary-hover);
+      }
+
+      /* Grid and Cards (Row Layout) */
+      .card-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+
+      .card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 16px;
+        position: relative;
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      }
+
+      .card:hover {
+        transform: translateY(-1px);
+        border-color: rgba(99, 102, 241, 0.4);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      }
+
+      .card-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        min-width: 140px;
+        flex-shrink: 0;
+      }
+
+      .running-num {
+        font-family: 'Outfit', sans-serif;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--primary);
+        min-width: 35px;
+        text-align: right;
+      }
+
+      .card-mid-info {
+        flex: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 250px;
+      }
+
+      .card-caption-block {
+        flex: 3;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 350px;
+      }
+
+      .card-right-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 130px;
+        flex-shrink: 0;
+        align-items: stretch;
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 12px;
+        gap: 8px;
+      }
+
+      .card-checkbox {
+        margin-top: 4px;
+        transform: scale(1.2);
+        cursor: pointer;
+      }
+
+      .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        margin-bottom: 4px;
+        flex: 1;
+      }
+
+      .badge {
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 9999px;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+
+      .badge-new { background: rgba(59, 130, 246, 0.2); color: #60a5fa; }
+      .badge-ai_generated { background: rgba(167, 139, 250, 0.2); color: #c084fc; }
+      .badge-review { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+      .badge-approved { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+      .badge-posted { background: rgba(6, 182, 212, 0.2); color: #22d3ee; }
+      .badge-tiktok-posted { background: rgba(244, 63, 94, 0.2); color: #f43f5e; }
+      .badge-tiktok-prompt-generated { background: rgba(236, 72, 153, 0.2); color: #f472b6; }
+      .badge-rejected { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+      .price-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+      }
+
+      .sale-price {
+        color: #f43f5e;
+        font-weight: 700;
+      }
+
+      .original-price {
+        text-decoration: line-through;
+        color: var(--text-secondary);
+      }
+
+      .discount-badge {
+        background: rgba(244, 63, 94, 0.15);
+        color: #f43f5e;
+        padding: 1px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        font-size: 0.75rem;
+      }
+
+      .caption-preview {
+        background: rgba(0, 0, 0, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        max-height: 100px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        margin-bottom: 16px;
+      }
+
+      .caption-preview i {
+        color: var(--text-secondary);
+      }
+
+      .reviewer-note {
+        font-size: 0.8rem;
+        color: var(--warning);
+        background: rgba(245, 158, 11, 0.1);
+        padding: 6px 10px;
+        border-radius: 6px;
+        margin-bottom: 12px;
+      }
+
+      .card-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 12px;
+      }
+
+      .card-actions button {
+        padding: 6px 12px;
+        font-size: 0.75rem;
+      }
+
+      /* Modal Window */
+      .modal-overlay {
+        position: fixed;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.75);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        backdrop-filter: blur(4px);
+      }
+
+      .modal-box {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        width: 750px;
+        max-width: 95%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 12px;
+      }
+
+      .modal-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+
+      .modal-close {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        font-size: 1.5rem;
+        cursor: pointer;
+        padding: 0;
+      }
+      .modal-close:hover {
+        color: var(--text-primary);
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        background: rgba(0, 0, 0, 0.15);
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.03);
+      }
+
+      .meta-item {
+        font-size: 0.85rem;
+      }
+      .meta-label {
+        color: var(--text-secondary);
+        font-weight: 500;
+        margin-right: 4px;
+      }
+
+      .modal-body label {
+        display: block;
+        margin-top: 12px;
+        margin-bottom: 6px;
+      }
+
+      textarea {
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 10px;
+        border-radius: 8px;
+        width: 100%;
+        font-family: inherit;
+        font-size: 0.9rem;
+        outline: none;
+        resize: vertical;
+        transition: border-color var(--transition-speed);
+      }
+
+      textarea:focus {
+        border-color: var(--primary);
+      }
+
+      .history-section {
+        margin-top: 16px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
+      }
+
+      .history-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        max-height: 150px;
+        overflow-y: auto;
+      }
+
+      .history-item {
+        background: rgba(0, 0, 0, 0.2);
+        padding: 8px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        border-left: 3px solid var(--primary);
+      }
+
+      .history-time {
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        margin-bottom: 4px;
+      }
+
+      .history-text {
+        white-space: pre-wrap;
+      }
+
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 12px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
+      }
+
+      /* Notification Toast */
+      .toast {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        background: var(--primary);
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 8px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        z-index: 10000;
+        display: none;
+        font-weight: 500;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      @keyframes slideIn {
+        from { transform: translateY(100px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+
+      /* Terminal Log Panel */
+      .terminal-panel {
+        background: #05070c;
+        border: 1px solid var(--border-color);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 30px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      }
+
+      .terminal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+      }
+
+      .terminal-title {
+        font-family: 'Outfit', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #f43f5e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .terminal-status {
+        width: 8px;
+        height: 8px;
+        background: var(--success);
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse 1.5s infinite;
+      }
+
+      @keyframes pulse {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+      }
+
+      .terminal-body {
+        background: #020305;
+        border-radius: 8px;
+        padding: 12px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.85rem;
+        color: #34d399;
+        height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+      }
+
+      .caption-wrapper {
+        position: relative;
+        flex: 3;
+        display: flex;
+        flex-direction: column;
+        min-width: 350px;
+      }
+
+      .copy-btn {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        z-index: 10;
+        backdrop-filter: blur(4px);
+        transition: background 0.2s, color 0.2s;
+      }
+
+      .copy-btn:hover {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Shopee Affiliate AI Caption</h1>
+      </header>
+
+      <!-- Search & Import Controls -->
+      <div class="controls">
+        <div class="control-group">
+          <label for="status">Status:</label>
+          <select id="status">
+            <option value="">All</option>
+            <option value="new">New</option>
+            <option value="ai_generated">AI Generated</option>
+            <option value="review">Review</option>
+            <option value="approved">Approved</option>
+            <option value="posted">Posted</option>
+            <option value="tiktok-posted">TikTok Posted</option>
+            <option value="tiktok-prompt-generated">TikTok Image prompt</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="campaign">Campaign:</label>
+          <select id="campaign">
+            <option value="">All</option>
+            <option value="GRADE AAA">GRADE AAA (Official Elite)</option>
+            <option value="VOLUME SHOCK">VOLUME SHOCK (Bandwagon Effect)</option>
+            <option value="MICRO-TRIGGER">MICRO-TRIGGER (Zero Cognitive Load)</option>
+          </select>
+        </div>
+
+        <form id="uploadForm" style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+          <input type="file" id="csvfile" name="file" accept=".csv" />
+          <button type="button" id="uploadBtn" class="btn-success">Upload CSV</button>
+        </form>
+
+        <div style="display:flex; align-items:center; gap:8px; margin-left:16px;">
+          <button id="prevPage" class="btn-secondary">Prev</button>
+          <span id="pageInfo">Page 1</span>
+          <button id="nextPage" class="btn-secondary">Next</button>
+        </div>
+      </div>
+
+      <!-- Grid of Cards -->
+      <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <input type="checkbox" id="selectAllCheckbox" style="transform: scale(1.2); cursor: pointer;" />
+          <label for="selectAllCheckbox" style="cursor: pointer; user-select: none;">Select All On Page</label>
+        </div>
+        <button id="genSelectionBtn" class="btn-success" style="display:none; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; border: none; cursor: pointer;">Generate selection (<span id="selectCount">0</span>)</button>
+        <button id="postSelectionBtn" class="btn-secondary" style="display:none; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer; color: var(--info); border-color: var(--info);">Post to FB (<span id="postCount">0</span>)</button>
+        <button id="postTikTokSelectionBtn" class="btn-secondary" style="display:none; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; border-radius: 6px; cursor: pointer; color: var(--warning); border-color: var(--warning);">Post to TikTok (<span id="tiktokCount">0</span>)</button>
+      </div>
+      <div id="list" class="card-grid"></div>
+
+      <!-- Real-time Terminal Logs -->
+      <div class="terminal-panel">
+        <div class="terminal-header">
+          <div class="terminal-title">
+            <span class="terminal-status"></span>
+            Real-time System Logs
+          </div>
+          <small style="color: var(--text-secondary)">Updates every 2 seconds</small>
+        </div>
+        <div id="terminalBody" class="terminal-body">Loading system logs...</div>
+      </div>
+    </div>
+
+    <!-- Toast message -->
+    <div id="toast" class="toast"></div>
+
+    <script>
+      let page = 0;
+      const limit = 30;
+      let selectedItemIds = new Set();
+      let currentCards = [];
+
+      function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.style.display = 'block';
+        setTimeout(() => { t.style.display = 'none'; }, 3000);
+      }
+
+      function formatCaption(text) {
+        if (!text) return '<i>No AI caption generated. Click Generate to start.</i>';
+        
+        // Escape HTML to prevent injection
+        let escaped = text
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+        
+        // Find URLs that look like Shopee image links or end with common image extensions
+        const imgRegex = /(https?:\/\/cf\.shopee\.co\.th\/file\/[^\s\)\u0e00-\u0e7f]+|https?:\/\/[^\s\)\u0e00-\u0e7f]+?\.(?:jpe?g|png|webp|gif)[^\s\)\u0e00-\u0e7f]*)/gi;
+        
+        // Replace image URLs with actual HTML img tags (and link below it)
+        escaped = escaped.replace(imgRegex, (url) => {
+          return `<br><img src="${url}" style="max-width: 150px; max-height: 120px; border-radius: 6px; margin: 6px 0; display: block; border: 1px solid var(--border-color);" onerror="this.style.display='none'"><a href="${url}" target="_blank" style="color: var(--primary); font-size: 0.8rem; display: block;">${url}</a>`;
+        });
+        
+        return escaped;
+      }
+
+      function el(tag, cls) {
+        const e = document.createElement(tag);
+        if (cls) e.className = cls;
+        return e;
+      }
+
+      async function updateCardStatus(itemid, newStatus) {
+        try {
+          const r = await fetch(`/cards/${encodeURIComponent(itemid)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+          if (r.ok) {
+            showToast(`Status updated to ${newStatus}`);
+            load();
+          } else {
+            const errData = await r.json();
+            alert(`Error: ${errData.error || 'Update failed'}`);
+          }
+        } catch (e) {
+          alert('Network error updating status');
+        }
+      }
+
+      async function generateAIViaAPI(itemid, btnElement) {
+        if(btnElement) btnElement.disabled = true;
+        showToast('Generating caption...');
+        try {
+          const r = await fetch(`/cards/${encodeURIComponent(itemid)}/generate`, { method: 'POST' });
+          if (r.ok) {
+            showToast('AI Generation successful');
+            load();
+          } else {
+            const errData = await r.json();
+            alert(`AI Generation Error: ${errData.error || 'Failed'}`);
+            load();
+          }
+        } catch (e) {
+          alert('API request error');
+        } finally {
+          if(btnElement) btnElement.disabled = false;
+        }
+      }
+
+      async function load() {
+        const statusVal = document.getElementById('status').value;
+        const campaignVal = document.getElementById('campaign').value;
+        const qparts = [];
+        if (statusVal) qparts.push('status=' + encodeURIComponent(statusVal));
+        if (campaignVal) qparts.push('campaign=' + encodeURIComponent(campaignVal));
+        qparts.push('limit=' + limit);
+        qparts.push('offset=' + (page * limit));
+        const q = qparts.length ? ('?' + qparts.join('&')) : '';
+
+        const r = await fetch('/cards' + q);
+        const data = await r.json();
+        currentCards = data;
+        const out = document.getElementById('list');
+        out.innerHTML = '';
+
+        // Reset page-level multi select status check
+        document.getElementById('selectAllCheckbox').checked = false;
+
+        data.forEach((c, idx) => {
+          const cardEl = el('div', 'card');
+          
+          // Section 1: Left block (Checkbox, Running number, status badge)
+          const leftBlock = el('div', 'card-left');
+          
+          const chk = el('input', 'card-checkbox');
+          chk.type = 'checkbox';
+          chk.checked = selectedItemIds.has(c.itemid);
+          chk.addEventListener('change', () => {
+            if (chk.checked) {
+              selectedItemIds.add(c.itemid);
+            } else {
+              selectedItemIds.delete(c.itemid);
+            }
+            updateBatchBtnState();
+          });
+          leftBlock.appendChild(chk);
+
+          const runNum = el('span', 'running-num');
+          runNum.textContent = `#${(page * limit) + idx + 1}`;
+          leftBlock.appendChild(runNum);
+          
+          const badge = el('span', `badge badge-${c.status}`);
+          let statusText = c.status;
+          if (c.status === 'tiktok-prompt-generated') {
+            statusText = 'TikTok Image prompt';
+          }
+          badge.textContent = statusText;
+          leftBlock.appendChild(badge);
+          
+          if (c.image_link) {
+            const img = el('img');
+            img.src = c.image_link;
+            img.style.width = '50px';
+            img.style.height = '50px';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '6px';
+            img.style.border = '1px solid var(--border-color)';
+            leftBlock.appendChild(img);
+          }
+          
+          cardEl.appendChild(leftBlock);
+
+          // Section 2: Mid block (Title & Prices)
+          const midInfo = el('div', 'card-mid-info');
+          
+          const title = el('div', 'card-title');
+          title.textContent = c.title || c.itemid;
+          title.style.webkitLineClamp = '1';
+          midInfo.appendChild(title);
+          
+          // Price info
+          const pr = el('div', 'price-row');
+          pr.style.marginBottom = '0px';
+          if (c.sale_price) {
+            const sp = el('span', 'sale-price');
+            sp.textContent = `฿${c.sale_price.toLocaleString()}`;
+            pr.appendChild(sp);
+          }
+          if (c.price) {
+            const op = el('span', 'original-price');
+            op.textContent = `฿${c.price.toLocaleString()}`;
+            pr.appendChild(op);
+          }
+          if (c.discount_percentage) {
+            const db = el('span', 'discount-badge');
+            db.textContent = `-${c.discount_percentage}%`;
+            pr.appendChild(db);
+          }
+          midInfo.appendChild(pr);
+          cardEl.appendChild(midInfo);
+
+          // Section 3: Caption preview block (Caption & Note)
+          const capBlock = el('div', 'card-caption-block');
+          const isTikTokFlow = c.status === 'tiktok-prompt-generated' || c.status === 'tiktok-posted' || (c.ai_prompt && c.ai_prompt.includes('Slide 1:'));
+          
+          if (isTikTokFlow) {
+            // 1. Parse captions
+            let s1_text = "", s2_text = "", s3_text = "";
+            const db_cap = c.ai_caption || "";
+            if (db_cap.includes('Slide 1:') && db_cap.includes('Slide 2:')) {
+                const p1 = db_cap.split('Slide 2:');
+                s1_text = p1[0].replace('Slide 1:', '').trim();
+                const p23 = (p1[1] || '').split('Slide 3:');
+                s2_text = p23[0].trim();
+                s3_text = (p23[1] || '').trim();
+            } else {
+                s1_text = db_cap;
+            }
+
+            // 2. Parse prompts
+            let p1_text = "", p2_text = "", p3_text = "";
+            const db_prompt = c.ai_prompt || "";
+            if (db_prompt.includes('Slide 1:') && db_prompt.includes('Slide 2:')) {
+                const p1 = db_prompt.split('Slide 2:');
+                p1_text = p1[0].replace('Slide 1:', '').trim();
+                const p23 = (p1[1] || '').split('Slide 3:');
+                p2_text = p23[0].trim();
+                p3_text = (p23[1] || '').trim();
+            } else {
+                p1_text = db_prompt;
+            }
+
+            const slides = [
+                { num: 1, label: 'Slide 1 - Hook', text: s1_text, prompt: p1_text },
+                { num: 2, label: 'Slide 2 - Price/Value', text: s2_text, prompt: p2_text },
+                { num: 3, label: 'Slide 3 - CTA', text: s3_text, prompt: p3_text }
+            ];
+
+            slides.forEach(slide => {
+                if (!slide.text && !slide.prompt) return;
+                const slideGroup = el('div');
+                slideGroup.style.borderLeft = '3px solid var(--primary)';
+                slideGroup.style.paddingLeft = '12px';
+                slideGroup.style.marginBottom = '12px';
+                slideGroup.style.background = 'rgba(255, 255, 255, 0.02)';
+                slideGroup.style.padding = '8px 12px';
+                slideGroup.style.borderRadius = '0 8px 8px 0';
+
+                const slideTitle = el('div');
+                slideTitle.style.fontSize = '0.85rem';
+                slideTitle.style.color = '#f472b6';
+                slideTitle.style.fontWeight = '700';
+                slideTitle.style.marginBottom = '6px';
+                slideTitle.textContent = slide.label;
+                slideGroup.appendChild(slideTitle);
+
+                // Add Thai Text
+                if (slide.text) {
+                    const textWrapper = el('div', 'caption-wrapper');
+                    textWrapper.style.marginBottom = '6px';
+
+                    const tTitle = el('div');
+                    tTitle.style.fontSize = '0.75rem';
+                    tTitle.style.color = '#34d399';
+                    tTitle.style.fontWeight = '600';
+                    tTitle.style.marginBottom = '2px';
+                    tTitle.textContent = 'Thai Text Overlay:';
+                    textWrapper.appendChild(tTitle);
+
+                    const textDiv = el('div', 'caption-preview');
+                    textDiv.style.marginBottom = '0px';
+                    textDiv.style.height = '45px';
+                    textDiv.style.paddingRight = '55px';
+                    textDiv.textContent = slide.text;
+                    textWrapper.appendChild(textDiv);
+
+                    const copyTextBtn = el('button', 'copy-btn');
+                    copyTextBtn.textContent = 'Copy';
+                    copyTextBtn.style.top = '18px';
+                    copyTextBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(slide.text);
+                        copyTextBtn.textContent = 'Copied!';
+                        setTimeout(() => { copyTextBtn.textContent = 'Copy'; }, 2000);
+                    });
+                    textWrapper.appendChild(copyTextBtn);
+                    slideGroup.appendChild(textWrapper);
+                }
+
+                // Add English Prompt
+                if (slide.prompt) {
+                    const promptWrapper = el('div', 'caption-wrapper');
+                    promptWrapper.style.marginBottom = '0px';
+
+                    const pTitle = el('div');
+                    pTitle.style.fontSize = '0.75rem';
+                    pTitle.style.color = '#c084fc';
+                    pTitle.style.fontWeight = '600';
+                    pTitle.style.marginBottom = '2px';
+                    pTitle.textContent = 'Background Prompt:';
+                    promptWrapper.appendChild(pTitle);
+
+                    const promptDiv = el('div', 'caption-preview');
+                    promptDiv.style.marginBottom = '0px';
+                    promptDiv.style.height = '45px';
+                    promptDiv.style.paddingRight = '55px';
+                    promptDiv.textContent = slide.prompt;
+                    promptWrapper.appendChild(promptDiv);
+
+                    const copyPromptBtn = el('button', 'copy-btn');
+                    copyPromptBtn.textContent = 'Copy';
+                    copyPromptBtn.style.top = '18px';
+                    copyPromptBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(slide.prompt);
+                        copyPromptBtn.textContent = 'Copied!';
+                        setTimeout(() => { copyPromptBtn.textContent = 'Copy'; }, 2000);
+                    });
+                    promptWrapper.appendChild(copyPromptBtn);
+                    slideGroup.appendChild(promptWrapper);
+                }
+
+                capBlock.appendChild(slideGroup);
+            });
+          } else {
+            // Regular FB caption text area rendering
+            const capWrapper = el('div', 'caption-wrapper');
+            
+            const caption = el('div', 'caption-preview');
+            caption.style.marginBottom = '0px';
+            caption.style.height = '200px'; // Expanded to ~10 lines
+            caption.style.paddingRight = '55px'; // Leave room for copy button
+            caption.innerHTML = formatCaption(c.ai_caption);
+            capWrapper.appendChild(caption);
+
+            if (c.ai_caption) {
+              const copyBtn = el('button', 'copy-btn');
+              copyBtn.textContent = 'Copy';
+              copyBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(c.ai_caption);
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
+              });
+              capWrapper.appendChild(copyBtn);
+            }
+
+            capBlock.appendChild(capWrapper);
+          }
+
+          if (c.reviewer_note) {
+            const note = el('div', 'reviewer-note');
+            note.style.marginBottom = '0px';
+            note.style.marginTop = '4px';
+            note.textContent = `Note: ${c.reviewer_note}`;
+            capBlock.appendChild(note);
+          }
+          cardEl.appendChild(capBlock);
+
+          // Section 4: Right Actions block
+          const act = el('div', 'card-right-actions');
+          
+          // Thumbnail product image on the right
+          if (c.image_link) {
+            const thumbContainer = el('div');
+            thumbContainer.style.display = 'flex';
+            thumbContainer.style.justifyContent = 'center';
+            thumbContainer.style.marginBottom = '2px';
+
+            const thumbImg = el('img');
+            thumbImg.src = c.image_link;
+            thumbImg.style.width = '75px';
+            thumbImg.style.height = '75px';
+            thumbImg.style.objectFit = 'cover';
+            thumbImg.style.borderRadius = '6px';
+            thumbImg.style.border = '2px solid var(--border-color)';
+            thumbImg.style.cursor = 'pointer';
+            thumbImg.style.transition = 'transform 0.2s ease, border-color 0.2s ease';
+            thumbImg.title = 'Click to zoom product image';
+            
+            thumbImg.addEventListener('mouseenter', () => {
+              thumbImg.style.transform = 'scale(1.05)';
+              thumbImg.style.borderColor = 'var(--primary)';
+            });
+            thumbImg.addEventListener('mouseleave', () => {
+              thumbImg.style.transform = 'scale(1)';
+              thumbImg.style.borderColor = 'var(--border-color)';
+            });
+            thumbImg.addEventListener('click', (e) => {
+              e.stopPropagation();
+              openLightbox(c.image_link, c.title || c.itemid);
+            });
+
+            thumbContainer.appendChild(thumbImg);
+            act.appendChild(thumbContainer);
+
+            // Copy Image button (above Edit/Review)
+            const copyImgBtn = el('button', 'btn-copy-image');
+            copyImgBtn.textContent = 'Copy Image';
+            copyImgBtn.title = 'Copy product image to clipboard for Gemini';
+            copyImgBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              copyImageToClipboard(c.image_link, copyImgBtn);
+            });
+            act.appendChild(copyImgBtn);
+          }
+          
+          const editBtn = el('button', 'btn-secondary');
+          editBtn.textContent = 'Edit/Review';
+          editBtn.addEventListener('click', () => openEditor(c));
+          act.appendChild(editBtn);
+
+          const genBtn = el('button');
+          genBtn.textContent = c.ai_caption ? 'Regenerate' : 'Generate';
+          genBtn.addEventListener('click', () => generateAIViaAPI(c.itemid, genBtn));
+          act.appendChild(genBtn);
+
+          // Workflow sub actions row
+          const subActions = el('div');
+          subActions.style.display = 'flex';
+          subActions.style.gap = '4px';
+          
+          if (c.status !== 'approved' && c.ai_caption) {
+            const appBtn = el('button', 'btn-success');
+            appBtn.textContent = 'Approve';
+            appBtn.style.flex = '1';
+            appBtn.addEventListener('click', () => updateCardStatus(c.itemid, 'approved'));
+            subActions.appendChild(appBtn);
+          }
+
+          if (c.status !== 'rejected') {
+            const rejBtn = el('button', 'btn-danger');
+            rejBtn.textContent = 'Reject';
+            rejBtn.style.flex = '1';
+            rejBtn.style.padding = '6px';
+            rejBtn.addEventListener('click', () => updateCardStatus(c.itemid, 'new'));
+            subActions.appendChild(rejBtn);
+          }
+
+          if (c.status === 'approved') {
+            const postBtn = el('button', 'btn-secondary');
+            postBtn.style.color = 'var(--info)';
+            postBtn.style.borderColor = 'var(--info)';
+            postBtn.style.flex = '1';
+            postBtn.textContent = 'Post';
+            postBtn.addEventListener('click', () => updateCardStatus(c.itemid, 'posted'));
+            subActions.appendChild(postBtn);
+          }
+          
+          if (subActions.children.length > 0) {
+            act.appendChild(subActions);
+          }
+
+          cardEl.appendChild(act);
+          cardEl.style.justifyContent = 'space-between';
+          out.appendChild(cardEl);
+        });
+
+        document.getElementById('pageInfo').textContent = `Page ${page + 1}`;
+        document.getElementById('prevPage').disabled = (page === 0);
+        document.getElementById('nextPage').disabled = (data.length < limit);
+
+        // Setup auto-polling if any card is currently generating/active in the background
+        if (window.cardPollTimeout) {
+          clearTimeout(window.cardPollTimeout);
+          window.cardPollTimeout = null;
+        }
+        const hasGenerating = data.some(c => c.reviewer_note && (c.reviewer_note.includes('กำลังสร้าง') || c.reviewer_note.includes('Generating')));
+        if (hasGenerating) {
+          window.cardPollTimeout = setTimeout(load, 3000);
+        }
+      }
+
+      function updateBatchBtnState() {
+        const btn = document.getElementById('genSelectionBtn');
+        const cnt = document.getElementById('selectCount');
+        const postBtn = document.getElementById('postSelectionBtn');
+        const postCnt = document.getElementById('postCount');
+        const postTikTokBtn = document.getElementById('postTikTokSelectionBtn');
+        const postTikTokCnt = document.getElementById('tiktokCount');
+        if (selectedItemIds.size > 0) {
+          btn.style.display = 'inline-block';
+          cnt.textContent = selectedItemIds.size;
+          postBtn.style.display = 'inline-block';
+          postCnt.textContent = selectedItemIds.size;
+          postTikTokBtn.style.display = 'inline-block';
+          postTikTokCnt.textContent = selectedItemIds.size;
+        } else {
+          btn.style.display = 'none';
+          postBtn.style.display = 'none';
+          postTikTokBtn.style.display = 'none';
+        }
+      }
+
+      // Master Select Checkbox Listener
+      document.getElementById('selectAllCheckbox').addEventListener('change', (e) => {
+        const checked = e.target.checked;
+        currentCards.forEach(c => {
+          if (checked) {
+            selectedItemIds.add(c.itemid);
+          } else {
+            selectedItemIds.delete(c.itemid);
+          }
+        });
+        updateBatchBtnState();
+        // toggle checkboxes in DOM
+        const checkboxes = document.querySelectorAll('.card-checkbox');
+        checkboxes.forEach(chk => { chk.checked = checked; });
+      });
+
+      // Sequential generate selection button action
+      document.getElementById('genSelectionBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('genSelectionBtn');
+        btn.disabled = true;
+        const items = Array.from(selectedItemIds);
+        showToast(`Starting sequential generation for ${items.length} items...`);
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (let i = 0; i < items.length; i++) {
+          const itemid = items[i];
+          showToast(`Generating (${i + 1}/${items.length})...`);
+          
+          try {
+            const res = await fetch(`/cards/${encodeURIComponent(itemid)}/generate`, {
+              method: 'POST'
+            });
+            if (res.ok) {
+              successCount++;
+              await load();
+            } else {
+              failCount++;
+            }
+          } catch (e) {
+            failCount++;
+          }
+        }
+        
+        showToast(`Completed! Success: ${successCount}, Failed: ${failCount}`);
+        selectedItemIds.clear();
+        updateBatchBtnState();
+        btn.disabled = false;
+        load();
+      });
+
+      // Batch post selection to Facebook button action
+      document.getElementById('postSelectionBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('postSelectionBtn');
+        btn.disabled = true;
+        const items = Array.from(selectedItemIds);
+        showToast(`Starting FB posting for ${items.length} items...`);
+        
+        try {
+          const res = await fetch('/cards/batch-post-fb', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemids: items })
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            showToast(`Completed! Success: ${data.success}, Failed: ${data.failed}`);
+            if (data.failed > 0) {
+                console.error("FB Posting failures:", data.details.filter(d => d.error));
+            }
+          } else {
+            const errData = await res.json();
+            alert(`FB Posting Error: ${errData.error || 'Failed'}`);
+          }
+        } catch (e) {
+          alert('Network error during FB posting');
+        } finally {
+          selectedItemIds.clear();
+          updateBatchBtnState();
+          btn.disabled = false;
+          load();
+        }
+      });
+
+      // Batch post selection to TikTok button action
+      document.getElementById('postTikTokSelectionBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('postTikTokSelectionBtn');
+        btn.disabled = true;
+        const items = Array.from(selectedItemIds);
+        showToast(`Starting TikTok posting for ${items.length} items...`);
+        
+        try {
+          const res = await fetch('/cards/batch-post-tiktok', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ itemids: items })
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            showToast(`Completed! Success: ${data.success}, Failed: ${data.failed}`);
+            if (data.failed > 0) {
+                console.error("TikTok Posting failures:", data.details.filter(d => d.error));
+            }
+          } else {
+            const errData = await res.json();
+            alert(`TikTok Posting Error: ${errData.error || 'Failed'}`);
+          }
+        } catch (e) {
+          alert('Network error during TikTok posting');
+        } finally {
+          selectedItemIds.clear();
+          updateBatchBtnState();
+          btn.disabled = false;
+          load();
+        }
+      });
+
+
+      // Lightbox modal for zooming image
+      function openLightbox(imageUrl, titleText = '') {
+        const overlay = el('div', 'modal-overlay');
+        overlay.style.zIndex = '9999';
+        overlay.style.display = 'flex';
+        overlay.style.justifyContent = 'center';
+        overlay.style.alignItems = 'center';
+        overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.85)';
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity 0.25s ease';
+        
+        const box = el('div');
+        box.style.position = 'relative';
+        box.style.maxWidth = '90vw';
+        box.style.maxHeight = '90vh';
+        box.style.display = 'flex';
+        box.style.flexDirection = 'column';
+        box.style.alignItems = 'center';
+        box.style.gap = '10px';
+        
+        const close = el('span');
+        close.innerHTML = '&times;';
+        close.style.position = 'absolute';
+        close.style.top = '-45px';
+        close.style.right = '0';
+        close.style.color = '#fff';
+        close.style.fontSize = '36px';
+        close.style.cursor = 'pointer';
+        close.style.fontWeight = 'bold';
+        close.addEventListener('click', () => {
+          overlay.style.opacity = '0';
+          setTimeout(() => overlay.remove(), 250);
+        });
+        box.appendChild(close);
+        
+        const img = el('img');
+        img.src = imageUrl;
+        img.style.maxWidth = '80vw';
+        img.style.maxHeight = '75vh';
+        img.style.objectFit = 'contain';
+        img.style.borderRadius = '8px';
+        img.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+        box.appendChild(img);
+        
+        if (titleText) {
+          const title = el('div');
+          title.textContent = titleText;
+          title.style.color = '#fff';
+          title.style.fontSize = '1.1rem';
+          title.style.fontWeight = '500';
+          title.style.textAlign = 'center';
+          title.style.textShadow = '0 2px 4px rgba(0,0,0,0.8)';
+          box.appendChild(title);
+        }
+        
+        overlay.appendChild(box);
+        
+        overlay.addEventListener('click', (e) => {
+          if (e.target === overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 250);
+          }
+        });
+        
+        document.body.appendChild(overlay);
+        
+        setTimeout(() => {
+          overlay.style.opacity = '1';
+        }, 10);
+      }
+
+      // Helper to copy image to clipboard via flask proxy
+      async function copyImageToClipboard(imageUrl, btnElement) {
+        if (!imageUrl) return;
+        
+        const originalText = btnElement.textContent;
+        const originalBg = btnElement.style.backgroundColor;
+        
+        btnElement.disabled = true;
+        btnElement.textContent = 'Copying...';
+        btnElement.style.backgroundColor = '#4b5563'; // neutral gray
+        
+        try {
+          const img = new Image();
+          img.crossOrigin = "anonymous";
+          img.src = '/proxy-image?url=' + encodeURIComponent(imageUrl);
+          
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = () => reject(new Error('Failed to load image via proxy'));
+          });
+          
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          
+          const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+          if (!blob) throw new Error('Canvas conversion failed');
+          
+          await navigator.clipboard.write([
+            new ClipboardItem({ 'image/png': blob })
+          ]);
+          
+          btnElement.textContent = 'Copied Image!';
+          btnElement.style.backgroundColor = '#10b981'; // Green
+          showToast('Product image copied to clipboard! You can paste it directly in Gemini.');
+        } catch (err) {
+          console.warn('Failed to copy image bytes, falling back to copying URL:', err);
+          try {
+            await navigator.clipboard.writeText(imageUrl);
+            btnElement.textContent = 'Copied URL!';
+            btnElement.style.backgroundColor = '#f59e0b'; // Amber
+            showToast('Copied product image URL to clipboard.');
+          } catch (clipErr) {
+            btnElement.textContent = 'Copy Failed';
+            btnElement.style.backgroundColor = '#ef4444'; // Red
+            showToast('Failed to copy image link.');
+          }
+        } finally {
+          setTimeout(() => {
+            btnElement.disabled = false;
+            btnElement.textContent = originalText;
+            btnElement.style.backgroundColor = originalBg;
+          }, 2500);
+        }
+      }
+
+      async function openEditor(card) {
+        const overlay = el('div', 'modal-overlay');
+        const box = el('div', 'modal-box');
+        
+        const header = el('div', 'modal-header');
+        const title = el('span', 'modal-title');
+        title.textContent = `Review: ${card.title || card.itemid}`;
+        const closeBtn = el('button', 'modal-close');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.addEventListener('click', () => document.body.removeChild(overlay));
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        box.appendChild(header);
+
+        // Product Metadata display
+        const meta = el('div', 'meta-grid');
+        meta.innerHTML = `
+          <div class="meta-item"><span class="meta-label">ID:</span>${card.itemid}</div>
+          <div class="meta-item"><span class="meta-label">Status:</span>${card.status}</div>
+          <div class="meta-item"><span class="meta-label">Original Price:</span>฿${card.price || 'N/A'}</div>
+          <div class="meta-item"><span class="meta-label">Sale Price:</span>฿${card.sale_price || 'N/A'}</div>
+          <div class="meta-item"><span class="meta-label">Discount:</span>${card.discount_percentage || 0}%</div>
+          <div class="meta-item"><span class="meta-label">Stock / Sold:</span>${card.stock || 0} / ${card.item_sold || 0}</div>
+          <div class="meta-item"><span class="meta-label">Rating:</span>⭐ ${card.item_rating || 'N/A'} (${card.likes_count || 0} likes)</div>
+          <div class="meta-item"><span class="meta-label">Product Link:</span><a href="${card.product_short_link || card.product_link}" target="_blank" style="color: var(--primary)">Link</a></div>
+        `;
+        box.appendChild(meta);
+
+        // Edit Area
+        const body = el('div', 'modal-body');
+        
+        const isTikTok = card.status === 'tiktok-prompt-generated' || card.status === 'tiktok-posted' || (card.ai_prompt && card.ai_prompt.includes('Slide 1:'));
+        
+        let slideInputs = {};
+        let captionArea = null;
+        let promptArea = null;
+        
+        if (isTikTok) {
+            // Split captions for 3 slides
+            let s1_text = "", s2_text = "", s3_text = "";
+            const db_cap = card.ai_caption || "";
+            if (db_cap.includes('Slide 1:') && db_cap.includes('Slide 2:')) {
+                const p1 = db_cap.split('Slide 2:');
+                s1_text = p1[0].replace('Slide 1:', '').trim();
+                const p23 = (p1[1] || '').split('Slide 3:');
+                s2_text = p23[0].trim();
+                s3_text = (p23[1] || '').trim();
+            } else {
+                s1_text = db_cap;
+            }
+
+            // Split prompts for 3 slides
+            let p1_text = "", p2_text = "", p3_text = "";
+            const db_prompt = card.ai_prompt || "";
+            if (db_prompt.includes('Slide 1:') && db_prompt.includes('Slide 2:')) {
+                const p1 = db_prompt.split('Slide 2:');
+                p1_text = p1[0].replace('Slide 1:', '').trim();
+                const p23 = (p1[1] || '').split('Slide 3:');
+                p2_text = p23[0].trim();
+                p3_text = (p23[1] || '').trim();
+            } else {
+                p1_text = db_prompt;
+            }
+
+            const slidesData = [
+                { num: 1, text: s1_text, prompt: p1_text, bg: card.slide1_bg_path, final: card.slide1_final_path, label: 'Slide 1 - Hook / Headline' },
+                { num: 2, text: s2_text, prompt: p2_text, bg: card.slide2_bg_path, final: card.slide2_final_path, label: 'Slide 2 - Price / Value Comparison' },
+                { num: 3, text: s3_text, prompt: p3_text, bg: card.slide3_bg_path, final: card.slide3_final_path, label: 'Slide 3 - Call to Action' }
+            ];
+
+            slidesData.forEach(slide => {
+                const slideDiv = el('div');
+                slideDiv.style.border = '1px solid var(--border-color)';
+                slideDiv.style.borderRadius = '12px';
+                slideDiv.style.padding = '16px';
+                slideDiv.style.marginBottom = '16px';
+                slideDiv.style.background = 'rgba(0, 0, 0, 0.2)';
+
+                const titleLabel = el('h4');
+                titleLabel.textContent = slide.label;
+                titleLabel.style.color = '#f472b6';
+                titleLabel.style.marginBottom = '12px';
+                titleLabel.style.fontSize = '1rem';
+                slideDiv.appendChild(titleLabel);
+
+                // 1. Text Overlay Box
+                const textLabel = el('label');
+                textLabel.textContent = 'ข้อความภาษาไทยที่จะวางทับสไลด์นี้:';
+                textLabel.style.fontSize = '0.8rem';
+                textLabel.style.color = 'var(--text-secondary)';
+                slideDiv.appendChild(textLabel);
+
+                const txtArea = el('textarea');
+                txtArea.rows = 3;
+                txtArea.value = slide.text;
+                txtArea.style.marginBottom = '12px';
+                slideDiv.appendChild(txtArea);
+                slideInputs[`slide${slide.num}_text`] = txtArea;
+
+                // 2. Background Prompt Section
+                if (slide.prompt) {
+                    const promptLabel = el('label');
+                    promptLabel.textContent = 'Prompt คัดลอกไปสร้างภาพพื้นหลัง (แนวตั้ง 9:16):';
+                    promptLabel.style.fontSize = '0.8rem';
+                    promptLabel.style.color = 'var(--text-secondary)';
+                    slideDiv.appendChild(promptLabel);
+
+                    const promptWrapper = el('div', 'caption-wrapper');
+                    promptWrapper.style.marginBottom = '12px';
+
+                    const promptDiv = el('div', 'caption-preview');
+                    promptDiv.style.marginBottom = '0px';
+                    promptDiv.style.height = '60px';
+                    promptDiv.style.paddingRight = '55px';
+                    promptDiv.textContent = slide.prompt;
+                    promptWrapper.appendChild(promptDiv);
+
+                    const copyPromptBtn = el('button', 'copy-btn');
+                    copyPromptBtn.textContent = 'Copy';
+                    copyPromptBtn.style.top = '10px';
+                    copyPromptBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(slide.prompt);
+                        copyPromptBtn.textContent = 'Copied!';
+                        setTimeout(() => { copyPromptBtn.textContent = 'Copy'; }, 2000);
+                    });
+                    promptWrapper.appendChild(copyPromptBtn);
+                    slideDiv.appendChild(promptWrapper);
+                }
+
+                // 3. Background Upload Area
+                const uploadLabel = el('label');
+                uploadLabel.textContent = 'อัปโหลดภาพพื้นหลังที่สร้างมาใหม่:';
+                uploadLabel.style.fontSize = '0.8rem';
+                uploadLabel.style.color = 'var(--text-secondary)';
+                slideDiv.appendChild(uploadLabel);
+
+                const uploadRow = el('div');
+                uploadRow.style.display = 'flex';
+                uploadRow.style.gap = '8px';
+                uploadRow.style.alignItems = 'center';
+                uploadRow.style.marginBottom = '12px';
+
+                const fileInput = el('input');
+                fileInput.type = 'file';
+                fileInput.accept = 'image/*';
+                fileInput.style.flex = '1';
+                uploadRow.appendChild(fileInput);
+
+                const uploadBtn = el('button', 'btn-secondary');
+                uploadBtn.textContent = 'Upload';
+                uploadBtn.style.padding = '8px 16px';
+                uploadRow.appendChild(uploadBtn);
+                slideDiv.appendChild(uploadRow);
+
+                uploadBtn.addEventListener('click', async () => {
+                    if (!fileInput.files || fileInput.files.length === 0) {
+                        alert('กรุณาเลือกไฟล์รูปภาพก่อนครับ!');
+                        return;
+                    }
+                    uploadBtn.disabled = true;
+                    uploadBtn.textContent = 'Uploading...';
+                    const fd = new FormData();
+                    fd.append('file', fileInput.files[0]);
+
+                    try {
+                        const res = await fetch(`/cards/${encodeURIComponent(card.itemid)}/upload-bg?slide=${slide.num}`, {
+                            method: 'POST',
+                            body: fd
+                        });
+                        if (res.ok) {
+                            const updatedCard = await res.json();
+                            showToast(`อัปโหลดรูปพื้นหลัง Slide ${slide.num} สำเร็จ!`);
+                            document.body.removeChild(overlay);
+                            openEditor(updatedCard);
+                        } else {
+                            alert('อัปโหลดไฟล์ไม่สำเร็จ');
+                        }
+                    } catch (e) {
+                        alert('เกิดข้อผิดพลาดในการอัปโหลด');
+                    } finally {
+                        uploadBtn.disabled = false;
+                        uploadBtn.textContent = 'Upload';
+                    }
+                });
+
+                // 4. Previews Row
+                const previewRow = el('div');
+                previewRow.style.display = 'flex';
+                previewRow.style.gap = '24px';
+                previewRow.style.marginTop = '12px';
+
+                if (slide.bg) {
+                    const bgBox = el('div');
+                    bgBox.innerHTML = `<span style="font-size:0.75rem; color:var(--text-secondary); display:block; margin-bottom:4px;">พื้นหลังของคุณ:</span>`;
+                    const bgImg = el('img');
+                    bgImg.src = slide.bg;
+                    bgImg.style.width = '100px';
+                    bgImg.style.height = '178px'; // 9:16
+                    bgImg.style.objectFit = 'cover';
+                    bgImg.style.borderRadius = '8px';
+                    bgImg.style.border = '1px solid var(--border-color)';
+                    bgBox.appendChild(bgImg);
+                    previewRow.appendChild(bgBox);
+                }
+
+                if (slide.final) {
+                    const finalBox = el('div');
+                    finalBox.innerHTML = `<span style="font-size:0.75rem; color:var(--success); display:block; margin-bottom:4px;">ภาพประกอบข้อความแล้ว:</span>`;
+                    const finalImg = el('img');
+                    finalImg.src = slide.final + "?t=" + new Date().getTime();
+                    finalImg.style.width = '100px';
+                    finalImg.style.height = '178px';
+                    finalImg.style.objectFit = 'cover';
+                    finalImg.style.borderRadius = '8px';
+                    finalImg.style.border = '2px solid var(--success)';
+                    finalBox.appendChild(finalImg);
+
+                    const dl = el('a');
+                    dl.href = slide.final;
+                    dl.download = `slide_${slide.num}_final.jpg`;
+                    dl.textContent = 'Download';
+                    dl.style.display = 'block';
+                    dl.style.fontSize = '0.75rem';
+                    dl.style.color = 'var(--info)';
+                    dl.style.textAlign = 'center';
+                    dl.style.marginTop = '4px';
+                    dl.style.textDecoration = 'none';
+                    finalBox.appendChild(dl);
+
+                    previewRow.appendChild(finalBox);
+                }
+
+                if (previewRow.children.length > 0) {
+                    slideDiv.appendChild(previewRow);
+                }
+
+                body.appendChild(slideDiv);
+            });
+
+        } else {
+            // Normal FB caption text area
+            const captionLabel = el('label');
+            captionLabel.textContent = 'AI Generated Caption / Script';
+            captionArea = el('textarea');
+            captionArea.rows = 8;
+            captionArea.value = card.ai_caption || '';
+            body.appendChild(captionLabel);
+            body.appendChild(captionArea);
+            
+            if (card.ai_prompt) {
+                const promptLabel = el('label');
+                promptLabel.textContent = 'TikTok Image Prompt';
+                promptArea = el('textarea');
+                promptArea.rows = 4;
+                promptArea.value = card.ai_prompt || '';
+                body.appendChild(promptLabel);
+                body.appendChild(promptArea);
+            }
+        }
+
+        const noteLabel = el('label');
+        noteLabel.textContent = 'Reviewer Notes / Errors';
+        const noteArea = el('textarea');
+        noteArea.rows = 3;
+        noteArea.value = card.reviewer_note || '';
+
+        body.appendChild(noteLabel);
+        body.appendChild(noteArea);
+        box.appendChild(body);
+
+        // Historical prompt logs section
+        const histSection = el('div', 'history-section');
+        const histTitle = el('div', 'history-title');
+        histTitle.innerHTML = '<span>Generation History Logs</span>';
+        const histList = el('div', 'history-list');
+        histList.textContent = 'Loading logs...';
+        histSection.appendChild(histTitle);
+        histSection.appendChild(histList);
+        box.appendChild(histSection);
+
+        // Load history data
+        fetch(`/cards/${encodeURIComponent(card.itemid)}/prompt-history`)
+          .then(r => r.json())
+          .then(logs => {
+            histList.innerHTML = '';
+            if (logs.length === 0) {
+              histList.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.8rem;">No history records found.</div>';
+              return;
+            }
+            logs.forEach(l => {
+              const item = el('div', 'history-item');
+              const time = el('div', 'history-time');
+              time.textContent = `Generated on: ${l.created_at}`;
+              const txt = el('div', 'history-text');
+              txt.textContent = l.response ? l.response : `Error: ${l.error_message}`;
+              item.appendChild(time);
+              item.appendChild(txt);
+              histList.appendChild(item);
+            });
+          })
+          .catch(() => {
+            histList.textContent = 'Failed to load history logs.';
+          });
+
+        // Save & Actions Footer
+        const footer = el('div', 'modal-footer');
+        
+        // Render compose button specifically for TikTok
+        if (isTikTok) {
+            const composeBtn = el('button');
+            composeBtn.textContent = 'สร้างตัวหนังสือ (Render Text)';
+            composeBtn.style.background = 'var(--info)';
+            composeBtn.addEventListener('click', async () => {
+                composeBtn.disabled = true;
+                composeBtn.textContent = 'Rendering...';
+                showToast('กำลังเขียนข้อความลงบนภาพสไลด์...');
+
+                const composePayload = {
+                    slide1_text: slideInputs.slide1_text.value,
+                    slide2_text: slideInputs.slide2_text.value,
+                    slide3_text: slideInputs.slide3_text.value
+                };
+
+                try {
+                    const res = await fetch(`/cards/${encodeURIComponent(card.itemid)}/compose-tiktok`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(composePayload)
+                    });
+                    if (res.ok) {
+                        const updatedCard = await res.json();
+                        showToast('ประกอบตัวหนังสือและสินค้าเข้าภาพเสร็จสมบูรณ์! ✅');
+                        document.body.removeChild(overlay);
+                        openEditor(updatedCard);
+                    } else {
+                        const errData = await res.json();
+                        alert(`การประกอบภาพล้มเหลว: ${errData.error}`);
+                    }
+                } catch (e) {
+                    alert('เกิดข้อผิดพลาดในการประกอบภาพ');
+                } finally {
+                    composeBtn.disabled = false;
+                    composeBtn.textContent = 'สร้างตัวหนังสือ (Render Text)';
+                }
+            });
+            footer.appendChild(composeBtn);
+        }
+        
+        const saveBtn = el('button', 'btn-success');
+        saveBtn.textContent = 'Save Changes';
+        saveBtn.addEventListener('click', async () => {
+          saveBtn.disabled = true;
+          let patchBody = {
+            reviewer_note: noteArea.value
+          };
+          
+          if (isTikTok) {
+            patchBody.ai_caption = `Slide 1: ${slideInputs.slide1_text.value.trim()}\n\nSlide 2: ${slideInputs.slide2_text.value.trim()}\n\nSlide 3: ${slideInputs.slide3_text.value.trim()}`;
+          } else {
+            patchBody.ai_caption = captionArea.value;
+            if (promptArea) {
+                patchBody.ai_prompt = promptArea.value;
+            }
+            if (card.status === 'new' || card.status === 'ai_generated') {
+                patchBody.status = 'review';
+            }
+          }
+          
+          const res = await fetch(`/cards/${encodeURIComponent(card.itemid)}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchBody)
+          });
+          if (res.ok) {
+            document.body.removeChild(overlay);
+            load();
+          } else {
+            const errData = await res.json();
+            alert(`Save failed: ${errData.error}`);
+            saveBtn.disabled = false;
+          }
+        });
+
+        const cancelBtn = el('button', 'btn-secondary');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.addEventListener('click', () => document.body.removeChild(overlay));
+
+        footer.appendChild(saveBtn);
+        footer.appendChild(cancelBtn);
+        box.appendChild(footer);
+        
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+      }
+
+      document.getElementById('status').addEventListener('change', () => { page = 0; load(); });
+      document.getElementById('campaign').addEventListener('change', () => { page = 0; load(); });
+      document.getElementById('uploadBtn').addEventListener('click', async () => {
+        const input = document.getElementById('csvfile');
+        if (!input.files || input.files.length === 0) { alert('Choose a CSV file'); return; }
+        const fd = new FormData();
+        fd.append('file', input.files[0]);
+        showToast('Uploading CSV...');
+        const res = await fetch('/cards/import', { method: 'POST', body: fd });
+        if (res.ok) {
+          showToast('Import complete!');
+          page = 0;
+          load();
+        } else {
+          alert('Import failed');
+        }
+      });
+
+      document.getElementById('prevPage').addEventListener('click', () => { if (page > 0) { page--; load(); } });
+      document.getElementById('nextPage').addEventListener('click', () => { page++; load(); });
+      
+      async function fetchLogs() {
+        try {
+          const res = await fetch('/logs');
+          if (res.ok) {
+            const logs = await res.json();
+            const term = document.getElementById('terminalBody');
+            if (logs.length === 0) {
+              term.textContent = "No log messages generated yet.";
+            } else {
+              term.textContent = logs.join('');
+              term.scrollTop = term.scrollHeight; // Auto-scroll
+            }
+          }
+        } catch (e) {
+          console.error("Failed to fetch logs:", e);
+        }
+      }
+
+      // Start polling for logs
+      setInterval(fetchLogs, 2000);
+      fetchLogs();
+
+      // Auto-load on page start
+      load();
+    </script>
+  </body>
+</html>

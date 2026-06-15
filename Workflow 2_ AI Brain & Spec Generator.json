@@ -1,0 +1,271 @@
+{
+  "name": "Workflow 2: AI Brain & Spec Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "inputSource": "passthrough"
+      },
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -200,
+        200
+      ],
+      "id": "585d4c6c-562e-4236-8d45-0d266e23e37b",
+      "name": "When Executed by Another Workflow"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.item.json;\nconst profile = input.agent_profile || {};\nconst history = input.chat_history || [];\n\n// Format chat history to a clean string\nconst chat_history_parsed = history\n  .map(h => `${h.role}: ${h.message}`)\n  .join('\\n');\n\nreturn {\n  session_id: input.session_id || 'test_session_001',\n  message: input.message || 'สวัสดีครับ',\n  skill_set: profile.skill_set || '',\n  context_data: profile.context_data || '',\n  learned_logic: profile.learned_logic || '',\n  chat_history_parsed: chat_history_parsed\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        200
+      ],
+      "id": "format-inputs-code-node",
+      "name": "Format Inputs",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "systemPrompt": "={{ $json.skill_set }}\n\n### CONTEXT & GOAL\n{{ $json.context_data }}\nคุณต้องนำข้อมูลดิบจากผู้ใช้มาจัดเรียงให้อยู่ในรูปแบบ Document Specification ดังนี้เท่านั้น:\n# [ชื่อโปรเจกต์] - Requirement Specification\n- **Objective:** (วัตถุประสงค์หลัก)\n- **Core Features:** (ฟีเจอร์ที่ต้องมี แยกเป็นข้อๆ)\n- **Technical Stack Recommended:** (เทคโนโลยีที่แนะนำ)\n- **Next Checkpoints:** (แผนงานขั้นถัดไป)\n\n### LEARNED LOGIC (กฎที่คุณเคยเรียนรู้และต้องปฏิบัติตามอย่างเคร่งครัด)\n{{ $json.learned_logic }}\n\n### CONVERSATION HISTORY\n<history>\n{{ $json.chat_history_parsed }}\n</history>",
+        "text": "={{ $json.message }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        280,
+        100
+      ],
+      "id": "ollama-chain",
+      "name": "Ollama Chain",
+      "settings": {
+        "onError": "continueRegularOutput",
+        "retryOnFail": true,
+        "maxTries": 3,
+        "waitBetweenTries": 15000
+      }
+    },
+    {
+      "parameters": {
+        "model": "gemma2:2b",
+        "baseUrl": "http://host.docker.internal:11434"
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        250,
+        -100
+      ],
+      "id": "ollama-model",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "a2b8e3df-498c-4f7d-8be9-cf4d8ebcd96a",
+          "name": "Ollama Local account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let responseText = '';\n\ntry {\n  const ollamaOutput = $('Ollama Chain').item;\n  if (ollamaOutput && ollamaOutput.json && ollamaOutput.json.text) {\n    responseText = ollamaOutput.json.text;\n  } else {\n    throw new Error('Ollama failed to return response text');\n  }\n} catch (e) {\n  responseText = 'Error: Local AI (Ollama) ไม่ตอบสนอง หรือการประมวลผลล้มเหลว';\n}\n\nconst inputData = $('Format Inputs').item.json;\n\nreturn {\n  session_id: inputData.session_id,\n  user_message: inputData.message,\n  ai_response: responseText,\n  formatted_spec: responseText\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        540,
+        200
+      ],
+      "id": "extract-response-code-node",
+      "name": "Extract Response",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO chat_history (session_id, role, message) VALUES ($1, $2, $3), ($1, $4, $5);",
+        "options": {
+          "queryReplacement": "={{ [ $('Extract Response').item.json.session_id, 'user', $('Extract Response').item.json.user_message, 'assistant', $('Extract Response').item.json.ai_response ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        800,
+        320
+      ],
+      "id": "save-chat-history",
+      "name": "Save Chat History",
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO project_specs (session_id, raw_input, formatted_spec, status)\nVALUES ($1, $2, $3, 'draft')\nON CONFLICT (session_id) DO UPDATE \nSET raw_input = EXCLUDED.raw_input,\n    formatted_spec = EXCLUDED.formatted_spec,\n    updated_at = CURRENT_TIMESTAMP;",
+        "options": {
+          "queryReplacement": "={{ [ $('Extract Response').item.json.session_id, $('Extract Response').item.json.user_message, $('Extract Response').item.json.formatted_spec ] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        800,
+        80
+      ],
+      "id": "save-spec",
+      "name": "Save Spec",
+      "credentials": {
+        "postgres": {
+          "id": "PEIuFXuORvNgS8U7",
+          "name": "Postgres account"
+        }
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "mode": "append"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        1040,
+        200
+      ],
+      "id": "merge-db-branches",
+      "name": "Merge",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "return $('Extract Response').item.json;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1280,
+        200
+      ],
+      "id": "prepare-output-node",
+      "name": "Prepare Output",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When Executed by Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Format Inputs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Inputs": {
+      "main": [
+        [
+          {
+            "node": "Ollama Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Ollama Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chain": {
+      "main": [
+        [
+          {
+            "node": "Extract Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Response": {
+      "main": [
+        [
+          {
+            "node": "Save Spec",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Save Chat History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Spec": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Chat History": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Prepare Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "c07f477c-5b94-4a38-ab3c-eea059137e66",
+  "meta": {
+    "instanceId": "941b6de2e7fc8454613dec48b10b1cb7763875a6746c1034d4db0f4696bea4b6"
+  },
+  "nodeGroups": [],
+  "id": "qixkxq2AzNhzxTLx",
+  "tags": []
+}

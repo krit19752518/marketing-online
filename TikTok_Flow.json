@@ -1,0 +1,138 @@
+{
+  "name": "TikTok Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "tiktok-scraper-trigger",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "node-1-webhook",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        112,
+        304
+      ],
+      "webhookId": "tiktok-scraper-webhook-id"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \"คุณคือนักการตลาดสายป้ายยาที่มีอารมณ์ขันและจริงใจ วิเคราะห์ข้อมูลสินค้าต่อไปนี้ แล้วเขียนข้อความสำหรับภาพสไลด์ TikTok 3 หน้า:\\nหน้า 1: พาดหัวดึงดูดความสนใจ (Hook) แบบสั้นๆ ไม่เกิน 10 คำ\\nหน้า 2: เปรียบเทียบราคา (ราคาเก่า vs ราคาใหม่) พร้อมบอกว่าทำไมถึงคุ้ม\\nหน้า 3: Call to Action ให้คนกดลิงก์หน้าโปรไฟล์\\n\\nนอกจากนี้ ให้เขียน Image Prompt สั้นๆ ภาษาอังกฤษ 1 ประโยค เพื่อให้ AI สร้างภาพพื้นหลังที่สื่อถึงสินค้านี้แบบ Abstract สวยๆ\\n\\nข้อมูลสินค้า:\\nชื่อ: \" + $json.body.product_name + \"\\nราคาเก่า: \" + $json.body.old_price + \" บาท\\nราคาใหม่: \" + $json.body.new_price + \" บาท\\nลดราคา: \" + $json.body.discount_percent + \"%\\nURL: \" + $json.body.product_url }}"
+      },
+      "id": "ollama-chain",
+      "name": "Ollama Chain",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.4,
+      "position": [
+        512,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "model": "llama3.2:3b",
+        "options": {}
+      },
+      "id": "ollama-model",
+      "name": "Ollama Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        480,
+        500
+      ],
+      "credentials": {
+        "ollamaApi": {
+          "id": "a2b8e3df-498c-4f7d-8be9-cf4d8ebcd96a",
+          "name": "Ollama Local account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=AIzaSyBNb6oiwC_hmECeGq1JegH6qJm4SyWR9MU",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"contents\": [ { \"parts\": [ { \"text\": \"You are an expert prompt engineer. You are given a 3-page TikTok marketing script for the product '\" + $(\"Webhook\").item.json.body.product_name + \"' with a discount of \" + $(\"Webhook\").item.json.body.discount_percent + \"%:\\n\\n\" + $(\"Ollama Chain\").item.json.text + \"\\n\\nCRITICAL FORMAT REQUIREMENT: ALL 3 prompts MUST produce a VERTICAL PORTRAIT image (9:16 aspect ratio like TikTok / Instagram Story). Strictly follow these composition rules for every prompt:\\n1. Product placed in the lower-center or center of the frame\\n2. Upper 35% of the image must be minimal and clean — reserved as a text overlay safe zone (use soft gradient, clean wall, or light bokeh — no busy elements)\\n3. Every prompt MUST end with the suffix: ', vertical portrait 9:16 aspect ratio, TikTok Story format, upper area clean soft gradient for text overlay, professional product studio photography, 8k ultra-realistic'\\n\\nGenerate 3 distinct, professional English image prompts:\\n- Slide 1 (Hook): A premium hero shot of the product centered in the lower half. Dynamic background elements (water splash, bokeh, abstract soft shapes) around the product. Upper area is a clean soft-gradient sky or wall.\\n- Slide 2 (Price Comparison): Product centered-bottom. A bold, elegant discount badge or price-slash graphic element (frosted glass card, golden sale tag, or large discount percentage) floats in the mid-frame. Background is clean and modern.\\n- Slide 3 (CTA): Product centered-bottom. A smartphone mockup or a minimalist 'Shop Now' arrow/button element appears in the mid-frame, inviting the viewer to tap. Soft warm background with subtle fabric drape or marble surface.\\n\\nFormat your output EXACTLY as a JSON object with keys \\\"prompt1\\\", \\\"prompt2\\\", and \\\"prompt3\\\". Do not include any markdown formatting, code blocks or surrounding text, just the raw JSON.\" } ] } ] }) }}",
+        "options": {}
+      },
+      "id": "node-4-gemini",
+      "name": "Gemini API (Image Prompt)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        768,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "={{ \"http://host.docker.internal:5000/cards/\" + $(\"Webhook\").item.json.body.itemid }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ \"status\": \"tiktok-prompt-generated\", \"ai_caption\": $(\"Ollama Chain\").item.json.text, \"ai_prompt\": (function() { try { const raw = $(\"Gemini API (Image Prompt)\").item.json.candidates[0].content.parts[0].text; const clean = raw.replace(/```json/g, \"\").replace(/```/g, \"\").trim(); const parsed = JSON.parse(clean); return \"Slide 1: \" + (parsed.prompt1 || \"\") + \"\\n\\nSlide 2: \" + (parsed.prompt2 || \"\") + \"\\n\\nSlide 3: \" + (parsed.prompt3 || \"\"); } catch(e) { return \"Slide 1: \" + $(\"Gemini API (Image Prompt)\").item.json.candidates[0].content.parts[0].text; } })(), \"reviewer_note\": null }) }}",
+        "options": {}
+      },
+      "id": "node-5-patch",
+      "name": "Update Flask Card",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1024,
+        288
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Ollama Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Ollama Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ollama Chain": {
+      "main": [
+        [
+          {
+            "node": "Gemini API (Image Prompt)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini API (Image Prompt)": {
+      "main": [
+        [
+          {
+            "node": "Update Flask Card",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

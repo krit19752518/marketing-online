@@ -1,0 +1,41 @@
+# Databases & Backups
+*.db
+*.sqlite3
+*.backup.json
+*.csv
+
+# Dependencies & Libraries
+.venv/
+venv/
+ENV/
+node_modules/
+
+
+# Environment variables & Sensitive Credentials
+.env
+*_cred.json
+openrouter_cred.json
+credentials.json
+*credentials.json
+discord-detail.txt
+*discord-detail.txt
+
+# Log Files
+*.log
+app.log
+
+# Dynamic assets / Composed files
+facebook-post/static/uploads/
+facebook-post/static/composed/
+
+# IDE/System files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/

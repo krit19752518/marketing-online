@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agent-001 | Requirement Spec Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Plus+Jakarta+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: linear-gradient(135deg, #0f0c20 0%, #15102a 50%, #06020f 100%);
+      --glass-bg: rgba(25, 20, 48, 0.45);
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-glow: rgba(147, 51, 234, 0.15);
+      --primary-color: #a855f7;
+      --primary-hover: #c084fc;
+      --secondary-color: #6366f1;
+      --accent-color: #22c55e;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --sidebar-width: 320px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      height: 100vh;
+      display: flex;
+      overflow: hidden;
+    }
+
+    /* App Container Layout */
+    .app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle at 80% 20%, rgba(168, 85, 247, 0.12) 0%, transparent 40%),
+                  radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.12) 0%, transparent 40%);
+    }
+
+    /* Sidebar controls */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: rgba(10, 8, 20, 0.85);
+      border-right: 1px solid var(--glass-border);
+      padding: 2rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 1.25rem;
+      box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
+    }
+
+    .brand-title h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #fff, #c084fc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-title p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .form-group label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .form-group input, .form-group select {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 8px;
+      padding: 0.75rem;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .form-group input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+    }
+
+    /* Main Workspace */
+    .workspace {
+      flex: 1;
+      display: flex;
+      height: 100%;
+    }
+
+    /* Chat Section */
+    .chat-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid var(--glass-border);
+      height: 100%;
+      background: rgba(13, 10, 27, 0.2);
+    }
+
+    .chat-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(13, 10, 27, 0.4);
+    }
+
+    .chat-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      background: rgba(255,255,255,0.05);
+      padding: 0.35rem 0.75rem;
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-color);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-color);
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .message {
+      max-width: 80%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      animation: fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message.user {
+      align-self: flex-end;
+    }
+
+    .message.assistant {
+      align-self: flex-start;
+    }
+
+    .message-content {
+      padding: 1rem 1.25rem;
+      border-radius: 16px;
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .message.user .message-content {
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      color: #fff;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.15);
+    }
+
+    .message.assistant .message-content {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .message.user .message-meta {
+      align-self: flex-end;
+    }
+
+    .chat-input-area {
+      padding: 1.5rem 2rem;
+      border-top: 1px solid var(--glass-border);
+      background: rgba(13, 10, 27, 0.4);
+    }
+
+    .input-box-wrapper {
+      display: flex;
+      gap: 0.75rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--glass-border);
+      border-radius: 12px;
+      padding: 0.5rem 0.75rem;
+      transition: all 0.2s ease;
+    }
+
+    .input-box-wrapper:focus-within {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 12px rgba(168, 85, 247, 0.25);
+    }
+
+    .chat-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.95rem;
+      resize: none;
+      height: 40px;
+      padding-top: 0.5rem;
+      overflow-y: hidden;
+    }
+
+    .send-btn {
+      align-self: flex-end;
+      background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+      border: none;
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #fff;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .send-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Document Spec Viewer Panel (Right) */
+    .spec-panel {
+      width: 45%;
+      min-width: 400px;
+      height: 100%;
+      background: rgba(6, 4, 15, 0.6);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .spec-header {
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .spec-header h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--primary-hover);
+    }
+
+    .spec-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+
+    .empty-spec {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-muted);
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      opacity: 0.5;
+    }
+
+    /* Rendered Spec Styles */
+    .spec-content {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.02);
+    }
+
+    .spec-content h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--glass-border);
+      padding-bottom: 0.75rem;
+      color: #fff;
+    }
+
+    .spec-content h2 {
+      font-size: 1.1rem;
+      margin-top: 1.5rem;
+      margin-bottom: 0.75rem;
+      color: var(--primary-hover);
+    }
+
+    .spec-content p {
+      margin-bottom: 1rem;
+      color: var(--text-main);
+      font-size: 0.95rem;
+    }
+
+    .spec-content ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .spec-content li {
+      font-size: 0.95rem;
+    }
+
+    .typing-indicator {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 0.5rem 1rem;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 16px;
+      align-self: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--text-muted);
+      border-radius: 50%;
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+    @keyframes bounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Control Settings -->
+    <div class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">01</div>
+        <div class="brand-title">
+          <h1>Agent-001</h1>
+          <p>Spec Generator & AI Brain</p>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Endpoint Mode</label>
+        <div class="mode-selector" style="display: flex; gap: 0.5rem; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 0.25rem;">
+          <button type="button" id="btn-mode-test" style="flex: 1; padding: 0.5rem; border: none; border-radius: 6px; background: var(--primary-color); color: #fff; cursor: pointer; font-family: inherit; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease;">Test Mode</button>
+          <button type="button" id="btn-mode-prod" style="flex: 1; padding: 0.5rem; border: none; border-radius: 6px; background: transparent; color: var(--text-muted); cursor: pointer; font-family: inherit; font-size: 0.85rem; font-weight: 600; transition: all 0.2s ease;">Production</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="webhook-url">n8n Webhook Endpoint</label>
+        <input type="text" id="webhook-url" value="http://localhost:5678/webhook-test/agent-001/chat">
+      </div>
+
+      <div class="form-group">
+        <label for="session-id">Session ID</label>
+        <input type="text" id="session-id" value="test_session_001">
+      </div>
+      
+      <div style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin-top: auto; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+        <strong>How to use:</strong><br>
+        1. Ensure your n8n workflow is imported and active.<br>
+        2. Enter your session and send raw requirements.<br>
+        3. The dashboard will automatically update the chat and spec.
+      </div>
+    </div>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+      <!-- Chat box section -->
+      <div class="chat-section">
+        <div class="chat-header">
+          <h2>Requirement Chat</h2>
+          <div class="status-badge">
+            <span class="status-dot"></span>
+            n8n Connected
+          </div>
+        </div>
+        
+        <div class="chat-messages" id="chat-messages">
+          <div class="message assistant">
+            <div class="message-content">
+              สวัสดีครับผมคือ PM Agent-001 ช่วยส่งรายละเอียดฟีเจอร์หรือความต้องการของระบบที่ต้องการสร้างมาได้เลยครับ เดี๋ยวผมออกแบบ Specification เอกสารให้ครับ!
+            </div>
+            <div class="message-meta">Agent-001</div>
+          </div>
+        </div>
+        
+        <div class="chat-input-area">
+          <div class="input-box-wrapper">
+            <textarea class="chat-input" id="chat-input" placeholder="พิมพ์ความต้องการระบบของคุณที่นี่..."></textarea>
+            <button class="send-btn" id="send-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Spec Document View panel -->
+      <div class="spec-panel">
+        <div class="spec-header">
+          <h2>Formatted Requirement Spec</h2>
+        </div>
+        <div class="spec-body" id="spec-body" style="position: relative; height: calc(100% - 60px);">
+          <div class="empty-spec" id="empty-spec">
+            <div class="empty-icon">📄</div>
+            <p>ยังไม่มีการสร้างเอกสาร Spec<br>ส่งข้อความขอความต้องการเพื่อเริ่มร่างโครงสร้าง</p>
+          </div>
+          <div id="spec-editor-container" style="display: none; flex-direction: column; height: 100%; gap: 1rem;">
+            <textarea id="spec-edit-area" style="flex: 1; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.25rem; color: var(--text-main); font-family: inherit; font-size: 0.95rem; line-height: 1.6; resize: none; outline: none; transition: border-color 0.2s ease;"></textarea>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span id="save-status" style="font-size: 0.85rem; color: var(--accent-color); opacity: 0; transition: opacity 0.3s ease;">Saved successfully!</span>
+              <button class="send-btn" id="save-spec-btn" style="width: auto; padding: 0.5rem 1.5rem; display: flex; align-items: center; gap: 0.5rem; font-weight: 600; font-size: 0.9rem;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                บันทึกการแก้ไข
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
+    const chatMessages = document.getElementById('chat-messages');
+    const specBody = document.getElementById('spec-body');
+    const emptySpec = document.getElementById('empty-spec');
+    const specEditorContainer = document.getElementById('spec-editor-container');
+    const specEditArea = document.getElementById('spec-edit-area');
+    const saveSpecBtn = document.getElementById('save-spec-btn');
+    const saveStatus = document.getElementById('save-status');
+
+    let lastUserMessage = '';
+
+    // Basic markdown parsing for spec viewer
+    function parseMarkdown(text) {
+      if (!text) return '';
+      let html = text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      
+      // Headers
+      html = html.replace(/^#\s+(.+)$/gm, '<h1>$1</h1>');
+      html = html.replace(/^##\s+(.+)$/gm, '<h2>$1</h2>');
+      html = html.replace(/^###\s+(.+)$/gm, '<h3>$1</h3>');
+      
+      // Bold
+      html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      
+      // List items
+      html = html.replace(/^\-\s+(.+)$/gm, '<li>$1</li>');
+      
+      // Wrap lists
+      html = html.replace(/(<li>.+<\/li>)+/gs, function(match) {
+        return '<ul>' + match + '</ul>';
+      });
+ 
+      // Paragraphs (split by double newline)
+      html = html.split(/\n\n+/).map(p => {
+        if (p.trim().startsWith('<h') || p.trim().startsWith('<ul')) {
+          return p;
+        }
+        return `<p>${p.replace(/\n/g, '<br>')}</p>`;
+      }).join('');
+ 
+      return `<div class="spec-content">${html}</div>`;
+    }
+ 
+    function appendMessage(sender, text) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      
+      // Escape HTML for safety in general messages, but keep paragraphs
+      const safeText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+ 
+      msgDiv.innerHTML = `
+        <div class="message-content">${safeText}</div>
+        <div class="message-meta">${sender === 'user' ? 'You' : 'Agent-001'}</div>
+      `;
+      chatMessages.appendChild(msgDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+ 
+    function showTypingIndicator() {
+      const indicator = document.createElement('div');
+      indicator.className = 'typing-indicator';
+      indicator.id = 'typing-indicator';
+      indicator.innerHTML = `
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+        <span class="typing-dot"></span>
+      `;
+      chatMessages.appendChild(indicator);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+ 
+    function removeTypingIndicator() {
+      const indicator = document.getElementById('typing-indicator');
+      if (indicator) indicator.remove();
+    }
+ 
+    async function sendRequirement() {
+      const message = chatInput.value.trim();
+      const webhookUrl = document.getElementById('webhook-url').value;
+      const sessionId = document.getElementById('session-id').value;
+ 
+      if (!message) return;
+ 
+      lastUserMessage = message;
+      // Append user message
+      appendMessage('user', message);
+      chatInput.value = '';
+
+      // Show loader
+      showTypingIndicator();
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            message: message
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Connection to n8n Webhook failed.');
+        }
+
+        const data = await response.json();
+        removeTypingIndicator();
+
+        // Process response payload from Respond to Webhook
+        let aiMessage = '';
+        
+        // Find text output from array of incoming items
+        if (Array.isArray(data) && data[0] && data[0].ai_response) {
+          aiMessage = data[0].ai_response;
+        } else if (data && data.ai_response) {
+          aiMessage = data.ai_response;
+        } else if (data && data.message) {
+          aiMessage = data.message;
+        } else {
+          aiMessage = JSON.stringify(data);
+        }
+
+        // Check if Webhook is incorrectly configured to Respond Immediately
+        if (aiMessage === "Workflow started") {
+          appendMessage('assistant', `⚠️ คำเตือน: ระบบ n8n ของคุณยังถูกตั้งค่าแบบตอบกลับทันที (Respond: Immediately) อยู่ กรุณาดับเบิลคลิกเปิดโหนด Webhook ใน n8n แล้วแก้ไขหัวข้อ Respond ให้เป็น "Using 'Respond to Webhook' node" จากนั้นกด Save และกด Active สีเขียวอีกครั้งเพื่อให้แสดงคำตอบ Spec จริงจาก AI ครับ`);
+          return;
+        }
+
+        // Render AI Message into chat
+        appendMessage('assistant', aiMessage);
+        
+        // Show edit panel and populate it
+        emptySpec.style.display = 'none';
+        specEditorContainer.style.display = 'flex';
+        specEditArea.value = aiMessage;
+
+      } catch (err) {
+        removeTypingIndicator();
+        appendMessage('assistant', `ผิดพลาด: ไม่สามารถสื่อสารกับเวิร์กโฟลว์ของ n8n ได้ กรุณาตรวจสอบว่าคุณเปิดสวิตช์ Active หรือกรอก Endpoint ถูกต้องและเซ็ต CORS หรือรันเวิร์กโฟลว์อยู่ครับ (${err.message})`);
+      }
+    }
+
+    async function saveSpecification() {
+      const specText = specEditArea.value;
+      const webhookUrl = document.getElementById('webhook-url').value;
+      const sessionId = document.getElementById('session-id').value;
+
+      saveSpecBtn.disabled = true;
+      saveStatus.style.opacity = '1';
+      saveStatus.textContent = 'กำลังบันทึก...';
+      saveStatus.style.color = 'var(--text-muted)';
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            session_id: sessionId,
+            action: 'save_spec',
+            message: lastUserMessage,
+            formatted_spec: specText
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('การเชื่อมต่อกับ n8n ล้มเหลว');
+        }
+
+        const data = await response.json();
+        saveStatus.textContent = 'บันทึกสำเร็จ!';
+        saveStatus.style.color = 'var(--accent-color)';
+        setTimeout(() => {
+          saveStatus.style.opacity = '0';
+        }, 3000);
+      } catch (err) {
+        saveStatus.textContent = `ผิดพลาด: ${err.message}`;
+        saveStatus.style.color = '#ef4444';
+      } finally {
+        saveSpecBtn.disabled = false;
+      }
+    }
+
+    // Event listeners
+    const btnModeTest = document.getElementById('btn-mode-test');
+    const btnModeProd = document.getElementById('btn-mode-prod');
+    const webhookUrlInput = document.getElementById('webhook-url');
+
+    btnModeTest.addEventListener('click', () => {
+      webhookUrlInput.value = 'http://localhost:5678/webhook-test/agent-001/chat';
+      btnModeTest.style.background = 'var(--primary-color)';
+      btnModeTest.style.color = '#fff';
+      btnModeProd.style.background = 'transparent';
+      btnModeProd.style.color = 'var(--text-muted)';
+    });
+
+    btnModeProd.addEventListener('click', () => {
+      webhookUrlInput.value = 'http://localhost:5678/webhook/agent-001/chat';
+      btnModeProd.style.background = 'var(--primary-color)';
+      btnModeProd.style.color = '#fff';
+      btnModeTest.style.background = 'transparent';
+      btnModeTest.style.color = 'var(--text-muted)';
+    });
+
+    sendBtn.addEventListener('click', sendRequirement);
+    saveSpecBtn.addEventListener('click', saveSpecification);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendRequirement();
+      }
+    });
+  </script>
+</body>
+</html>
