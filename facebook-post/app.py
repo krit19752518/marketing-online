@@ -75,6 +75,7 @@ def background_worker():
         if itemid is None:
             break
         logging.info(f"[Queue Worker] Processing AI caption for item ID: {itemid}")
+        db = None
         try:
             db = get_db()
             cur = db.execute('SELECT * FROM shopee_affiliate_cards WHERE itemid = ?', (itemid,))
@@ -95,6 +96,11 @@ def background_worker():
         except Exception as e:
             logging.error(f"[Queue Worker] Exception in generation worker for {itemid}: {e}", exc_info=True)
         finally:
+            if db:
+                try:
+                    db.close()
+                except Exception:
+                    pass
             task_queue.task_done()
 
 # Start Facebook caption worker thread
@@ -113,6 +119,7 @@ def tiktok_background_worker():
         if itemid is None:
             break
         logging.info(f"[TikTok Worker] Processing item ID: {itemid}")
+        db = None
         try:
             db = get_db()
             cur = db.execute('SELECT * FROM shopee_affiliate_cards WHERE itemid = ?', (itemid,))
@@ -172,15 +179,21 @@ def tiktok_background_worker():
 
         except Exception as exc:
             logging.error(f"[TikTok Worker] Exception for {itemid}: {exc}", exc_info=True)
-            try:
-                db.execute(
-                    "UPDATE shopee_affiliate_cards SET reviewer_note = ?, updated_at = datetime('now') WHERE itemid = ?",
-                    (f"TikTok System Error: {str(exc)}", itemid)
-                )
-                db.commit()
-            except Exception:
-                pass
+            if db:
+                try:
+                    db.execute(
+                        "UPDATE shopee_affiliate_cards SET reviewer_note = ?, updated_at = datetime('now') WHERE itemid = ?",
+                        (f"TikTok System Error: {str(exc)}", itemid)
+                    )
+                    db.commit()
+                except Exception:
+                    pass
         finally:
+            if db:
+                try:
+                    db.close()
+                except Exception:
+                    pass
             tiktok_task_queue.task_done()
 
 # Start TikTok worker thread
@@ -191,6 +204,7 @@ tiktok_worker_thread.start()
 def list_cards():
     status = request.args.get('status')
     campaign = request.args.get('campaign')
+    search = request.args.get('search')
     limit = int(request.args.get('limit', 50))
     offset = int(request.args.get('offset', 0))
     q = 'SELECT * FROM shopee_affiliate_cards'
@@ -202,6 +216,9 @@ def list_cards():
     if campaign:
         conditions.append('source_filename = ?')
         params.append(campaign)
+    if search:
+        conditions.append('description LIKE ?')
+        params.append(f'%{search}%')
     if conditions:
         q += ' WHERE ' + ' AND '.join(conditions)
     q += ' ORDER BY updated_at DESC, discount_percentage DESC LIMIT ? OFFSET ?'
@@ -555,27 +572,30 @@ def batch_post_tiktok_endpoint():
     results = {'success': 0, 'failed': 0, 'details': []}
     db = get_db()
 
-    for itemid in itemids:
-        cur = db.execute('SELECT itemid, title FROM shopee_affiliate_cards WHERE itemid = ?', (itemid,))
-        card = cur.fetchone()
-        if not card:
-            results['failed'] += 1
-            results['details'].append({'itemid': itemid, 'error': 'Card not found'})
-            continue
+    try:
+        for itemid in itemids:
+            cur = db.execute('SELECT itemid, title FROM shopee_affiliate_cards WHERE itemid = ?', (itemid,))
+            card = cur.fetchone()
+            if not card:
+                results['failed'] += 1
+                results['details'].append({'itemid': itemid, 'error': 'Card not found'})
+                continue
 
-        # Mark as queued immediately so UI shows progress
-        db.execute(
-            "UPDATE shopee_affiliate_cards "
-            "SET reviewer_note = 'กำลังสร้าง TikTok prompt...', updated_at = datetime('now') "
-            "WHERE itemid = ?",
-            (itemid,)
-        )
-        db.commit()
+            # Mark as queued immediately so UI shows progress
+            db.execute(
+                "UPDATE shopee_affiliate_cards "
+                "SET reviewer_note = 'กำลังสร้าง TikTok prompt...', updated_at = datetime('now') "
+                "WHERE itemid = ?",
+                (itemid,)
+            )
+            db.commit()
 
-        tiktok_task_queue.put(itemid)
-        logging.info(f"[TikTok] Queued item {itemid} — '{dict(card).get('title', '')[:40]}'")
-        results['success'] += 1
-        results['details'].append({'itemid': itemid, 'status': 'queued'})
+            tiktok_task_queue.put(itemid)
+            logging.info(f"[TikTok] Queued item {itemid} — '{dict(card).get('title', '')[:40]}'")
+            results['success'] += 1
+            results['details'].append({'itemid': itemid, 'status': 'queued'})
+    finally:
+        db.close()
 
     return jsonify(results)
 

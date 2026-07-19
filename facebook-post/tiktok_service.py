@@ -14,7 +14,7 @@ import json
 import urllib.request
 import logging
 import re
-from PIL import Image, ImageDraw, ImageFont, ImageFilter
+from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageStat
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -358,8 +358,8 @@ def generate_tiktok_caption(card: dict):
             data=json.dumps(body).encode("utf-8"),
             headers={"Content-Type": "application/json"},
         )
-        # Timeout extended as Ollama runs on local CPU and can be slow (increased to 30 mins)
-        with urllib.request.urlopen(req, timeout=1800) as res:
+        # Timeout extended as Ollama runs on local CPU and can be slow (set to 3 mins)
+        with urllib.request.urlopen(req, timeout=180) as res:
             res_body = json.loads(res.read().decode("utf-8"))
             text = res_body.get("response", "").strip()
             if text:
@@ -577,15 +577,32 @@ def parse_line_segments(line: str, ghost_str: str, promo_str: str) -> list:
     return segments
 
 
+def draw_single_line_with_shadow(draw, bg_img, text, font, fill, y):
+    """Draw a single line of centered text with a professional, soft drop shadow."""
+    w = draw.textlength(text, font=font)
+    x = (1080 - w) / 2
+    
+    # 1. Render Drop Shadow
+    shadow_img = Image.new("RGBA", bg_img.size, (0, 0, 0, 0))
+    shadow_draw = ImageDraw.Draw(shadow_img)
+    shadow_draw.text((x, y + 5), text, font=font, fill=(0, 0, 0, 102))
+    shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=10))
+    bg_img.alpha_composite(shadow_img)
+    
+    # 2. Render Main Text
+    draw.text((x, y), text, font=font, fill=fill)
+
+
 def draw_text_wrapped(
     draw, text, font, fill, max_width, start_y, line_spacing=1.4,
     stroke_fill=None, stroke_width=0,
     ghost_price_str=None, promo_price_str=None,
     color_primary=(30, 41, 59, 255),
     color_promo=(220, 38, 38, 255),
-    color_ghost=(148, 163, 184, 255)
+    color_ghost=(148, 163, 184, 255),
+    bg_img=None
 ):
-    """Draw text and wrap lines automatically, supporting segment-based coloring and strikethroughs."""
+    """Draw text and wrap lines automatically, supporting segment-based coloring, strikethroughs, and drop shadows."""
     text = text.replace('\r', '')
     lines = []
     current_line = ""
@@ -615,8 +632,21 @@ def draw_text_wrapped(
             total_w += draw.textlength(segment_text, font=font)
             
         # Center horizontally
-        x = (1080 - total_w) / 2
+        x_start = (1080 - total_w) / 2
         
+        # 1. Render Drop Shadows for all segments first
+        if bg_img:
+            shadow_img = Image.new("RGBA", bg_img.size, (0, 0, 0, 0))
+            shadow_draw = ImageDraw.Draw(shadow_img)
+            x_shadow = x_start
+            for segment_text, style in segments:
+                shadow_draw.text((x_shadow, y + 4), segment_text, font=font, fill=(0, 0, 0, 89))
+                x_shadow += draw.textlength(segment_text, font=font)
+            shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=10))
+            bg_img.alpha_composite(shadow_img)
+            
+        # 2. Render Main Text segments
+        x_text = x_start
         for segment_text, style in segments:
             # Determine color/fill
             if style == 'ghost':
@@ -628,18 +658,26 @@ def draw_text_wrapped(
                 
             # Draw segment
             if stroke_fill and stroke_width > 0:
-                draw.text((x, y), segment_text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
+                draw.text((x_text, y), segment_text, font=font, fill=fill_color, stroke_width=stroke_width, stroke_fill=stroke_fill)
             else:
-                draw.text((x, y), segment_text, font=font, fill=fill_color)
+                draw.text((x_text, y), segment_text, font=font, fill=fill_color)
                 
             w = draw.textlength(segment_text, font=font)
             
             # If style is ghost, draw a central horizontal strikethrough line ONLY over this segment
             if style == 'ghost':
                 strike_y = y + int(font_height / 2) + 2
-                draw.line([(x - 2, strike_y), (x + w + 2, strike_y)], fill=color_ghost, width=4)
+                # Drop shadow for strikethrough line
+                if bg_img:
+                    shadow_img = Image.new("RGBA", bg_img.size, (0, 0, 0, 0))
+                    shadow_draw = ImageDraw.Draw(shadow_img)
+                    shadow_draw.line([(x_text - 2, strike_y + 4), (x_text + w + 2, strike_y + 4)], fill=(0, 0, 0, 89), width=4)
+                    shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=10))
+                    bg_img.alpha_composite(shadow_img)
+                # Main strikethrough line
+                draw.line([(x_text - 2, strike_y), (x_text + w + 2, strike_y)], fill=color_ghost, width=4)
                 
-            x += w
+            x_text += w
             
         y += int(font_height * line_spacing)
     return y
@@ -730,74 +768,103 @@ def compose_tiktok_slide_image(bg_image_path, product_image_url, text_content, o
 
     cleaned_text = clean_currency_text(cleaned_text)
 
+    # 1. Determine Backdrop Luminance & Default Text Colors
+    # Calculate average luminance of the text area (top 60% of the canvas: 0 to 1152px)
+    text_area = bg_img.crop((0, 0, canvas_w, int(canvas_h * 0.6)))
+    stat = ImageStat.Stat(text_area.convert("L"))
+    mean_luminance = stat.mean[0] # value between 0 and 255
+    
+    if mean_luminance < 128:
+        # Dark background -> use White text
+        text_color = (255, 255, 255, 255)
+        color_ghost = (203, 213, 225, 255) # Light gray
+    else:
+        # Light background -> use Dark text
+        text_color = (30, 41, 59, 255) # Charcoal Black
+        color_ghost = (148, 163, 184, 255) # Muted Slate Gray
+
+    # Enforce Slide 2 Contrast Inversion: change Line 1 color from black to solid White (#FFFFFF)
+    if slide_num == 2:
+        text_color = (255, 255, 255, 255)
+        color_ghost = (203, 213, 225, 255)
+
     # Wrap main text into lines to measure height
     max_text_width = 920 # Margin of 80px on each side
-    body_lines = []
-    current_line = ""
-    for token in cleaned_text:
-        if token == '\n':
+    
+    # Font settings & Slide 1 scale up
+    if slide_num == 1:
+        font_bold_75 = ImageFont.truetype(font_bold_path, 75) if os.path.exists(font_bold_path) else ImageFont.load_default()
+        font_regular_45 = ImageFont.truetype(font_regular_path, 45) if os.path.exists(font_regular_path) else ImageFont.load_default()
+        
+        lines = [line.strip() for line in cleaned_text.split('\n') if line.strip()]
+        line_heights = []
+        for i, line in enumerate(lines):
+            f = font_bold_75 if i == 0 else font_regular_45
+            line_heights.append(int(f.size * 1.4))
+        body_height = sum(line_heights)
+    else:
+        body_lines = []
+        current_line = ""
+        for token in cleaned_text:
+            if token == '\n':
+                body_lines.append(current_line)
+                current_line = ""
+                continue
+            test_line = current_line + token
+            w = draw.textlength(test_line, font=font_title)
+            if w > max_text_width and current_line:
+                body_lines.append(current_line)
+                current_line = token
+            else:
+                current_line = test_line
+        if current_line:
             body_lines.append(current_line)
-            current_line = ""
-            continue
-        test_line = current_line + token
-        w = draw.textlength(test_line, font=font_title)
-        if w > max_text_width and current_line:
-            body_lines.append(current_line)
-            current_line = token
-        else:
-            current_line = test_line
-    if current_line:
-        body_lines.append(current_line)
+        line_h = int(font_title.size * 1.4)
+        body_height = len(body_lines) * line_h
 
     # Calculate height for centering within top 60% clear space (0 to 1152px)
     total_height = 0
-    badge_height = 60
-    badge_margin = 40
+    badge_height = 0
+    badge_margin = 0
     total_height += badge_height + badge_margin
-
-    line_h = int(font_title.size * 1.4)
-    body_height = len(body_lines) * line_h
     total_height += body_height
 
     draw_price_overlay = False
     overlay_margin = 60
-    promo_h = font_title.size
     promo_margin = 20
     orig_h = font_body.size
 
+    # Slide 2: Format the discount line scale up to 90px (Extra Bold)
     if slide_num == 2 and price_info:
         # Check if the main text already contains price keywords (to prevent double rendering)
         has_price_in_text = any(x in cleaned_text for x in ["เหลือเพียง", "ปกติ", "ประหยัด", "จ่ายเพียง", "ลดจัดหนัก"])
         if not has_price_in_text:
             draw_price_overlay = True
+            font_promo_90 = ImageFont.truetype(font_bold_path, 90) if os.path.exists(font_bold_path) else ImageFont.load_default()
+            promo_h = font_promo_90.size
             total_height += overlay_margin + promo_h + promo_margin + orig_h
-
-    # We want a target centering zone: Y from 100 to 1100 (total height of 1000px)
-    target_zone_h = 1000
-    if total_height < target_zone_h:
-        start_y = 100 + (target_zone_h - total_height) / 2
+        else:
+            promo_h = font_title.size
     else:
-        start_y = 60
+        promo_h = font_title.size
+
+        # Centering zone: enforce top padding buffer (12-15% of canvas height)
+    top_padding_buffer = int(canvas_h * 0.13)  # ~13% of height (~250px)
+    max_text_area_h = int(canvas_h * 0.6)  # top 60% reserved for text
+    available_height = max_text_area_h - top_padding_buffer
+    if total_height < available_height:
+        start_y = top_padding_buffer + (available_height - total_height) // 2
+    else:
+        start_y = top_padding_buffer
 
     logging.info(f"[Composition] Calculated layout total_height: {total_height}px, start_y: {start_y}px")
 
-    # 2. Draw Slide Badge
-    slide_tag = f"SLIDE {slide_num} / 3"
-    tag_w = draw.textlength(slide_tag, font=font_badge)
-    
-    badge_bg = (99, 102, 241, 30) if not is_fallback_bg else (99, 102, 241, 60)
-    badge_border = (99, 102, 241, 180) if not is_fallback_bg else (99, 102, 241, 255)
-    badge_text_color = (79, 70, 229, 255) if not is_fallback_bg else (243, 244, 246, 255)
+# Slide badge removed per requirement: no SLIDE X / 3 indicator.
+    # Render "SLIDE X / 3" as a naked, clean, minimalist string using light gray text (#CBD5E1) directly onto the backdrop.
+
 
     badge_y = start_y
-    draw.rounded_rectangle(
-        [((canvas_w - tag_w) / 2 - 20, badge_y), ((canvas_w + tag_w) / 2 + 20, badge_y + badge_height)],
-        radius=30,
-        fill=badge_bg,
-        outline=badge_border,
-        width=2
-    )
-    draw.text(((canvas_w - tag_w) / 2, badge_y + 8), slide_tag, font=font_badge, fill=badge_text_color)
+
     
     current_y = badge_y + badge_height + badge_margin
 
@@ -810,7 +877,6 @@ def compose_tiktok_slide_image(bg_image_path, product_image_url, text_content, o
         if orig_p:
             try:
                 op_int = int(float(orig_p))
-                # Match possible formats in cleaned_text
                 for p_str in [f"{op_int:,}.-", f"{op_int}.-", f"{op_int:,}", f"{op_int}"]:
                     if p_str in cleaned_text:
                         ghost_price_str = p_str
@@ -827,19 +893,26 @@ def compose_tiktok_slide_image(bg_image_path, product_image_url, text_content, o
             except Exception:
                 pass
 
-    # Draw body lines with custom segment colors (Charcoal Black, Ruby Crimson, Slate Gray)
-    text_color = (30, 41, 59, 255) # Charcoal Black (#1E293B)
-    
-    current_y = draw_text_wrapped(
-        draw, cleaned_text, font_title, text_color, 
-        max_text_width, current_y, line_spacing=1.4,
-        stroke_fill=None, stroke_width=0,
-        ghost_price_str=ghost_price_str,
-        promo_price_str=promo_price_str,
-        color_primary=text_color,
-        color_promo=(220, 38, 38, 255),  # Ruby Crimson Red (#DC2626)
-        color_ghost=(148, 163, 184, 255)  # Muted Slate Gray (#94A3B8)
-    )
+    # Draw body lines
+    if slide_num == 1:
+        # Slide 1 Typography Scale Up: Line 1 -> 75px Bold, Line 2 -> 45px Medium (Regular)
+        for i, line in enumerate(lines):
+            f = font_bold_75 if i == 0 else font_regular_45
+            w = draw.textlength(line, font=f)
+            draw.text(((canvas_w - w) / 2, current_y), line, font=f, fill=text_color)
+            current_y += int(f.size * 1.4)
+    else:
+        current_y = draw_text_wrapped(
+            draw, cleaned_text, font_title, text_color,
+            max_text_width, current_y, line_spacing=1.5,
+            stroke_fill=None, stroke_width=0,
+            ghost_price_str=ghost_price_str,
+            promo_price_str=promo_price_str,
+            color_primary=text_color,
+            color_promo=(220, 38, 38, 255),  # Ruby Crimson Red (#DC2626)
+            color_ghost=color_ghost,
+            bg_img=bg_img
+        )
 
     # 3. Draw Price Tag Overlay (if applicable)
     if draw_price_overlay:
@@ -856,8 +929,10 @@ def compose_tiktok_slide_image(bg_image_path, product_image_url, text_content, o
         
         # Promo price text
         price_text = f"ลด {discount}% เหลือเพียง {sale_price:_}.-"
-        p_w = draw.textlength(price_text, font=font_title)
-        draw.text(((canvas_w - p_w) / 2, price_tag_y), price_text, font=font_title, fill=(220, 38, 38, 255))
+        font_promo = ImageFont.truetype(font_bold_path, 90) if os.path.exists(font_bold_path) else ImageFont.load_default()
+        
+        # Draw promo price with drop shadow
+        draw_single_line_with_shadow(draw, bg_img, price_text, font_promo, (220, 38, 38, 255), price_tag_y)
         
         # Original price subtext
         prefix_text = "ปกติ "
@@ -868,18 +943,28 @@ def compose_tiktok_slide_image(bg_image_path, product_image_url, text_content, o
         total_w = prefix_w + price_w
         start_x = (canvas_w - total_w) / 2
         
-        orig_y = price_tag_y + promo_h + promo_margin
-        
-        # Draw prefix "ปกติ "
-        draw.text((start_x, orig_y), prefix_text, font=font_body, fill=(148, 163, 184, 255))
-        # Draw price value
-        draw.text((start_x + prefix_w, orig_y), price_val_text, font=font_body, fill=(148, 163, 184, 255))
-        
-        # Central horizontal strikethrough line ONLY over the price value
+        orig_y = price_tag_y + font_promo.size + promo_margin
         strikethrough_y = orig_y + int(font_body.size / 2) + 2
+        
+        # Draw drop shadow for original price prefix, value, and strikethrough line
+        shadow_img = Image.new("RGBA", bg_img.size, (0, 0, 0, 0))
+        shadow_draw = ImageDraw.Draw(shadow_img)
+        shadow_draw.text((start_x, orig_y + 4), prefix_text, font=font_body, fill=(0, 0, 0, 89))
+        shadow_draw.text((start_x + prefix_w, orig_y + 4), price_val_text, font=font_body, fill=(0, 0, 0, 89))
+        shadow_draw.line(
+            [(start_x + prefix_w - 4, strikethrough_y + 4), (start_x + total_w + 4, strikethrough_y + 4)], 
+            fill=(0, 0, 0, 89), 
+            width=4
+        )
+        shadow_img = shadow_img.filter(ImageFilter.GaussianBlur(radius=10))
+        bg_img.alpha_composite(shadow_img)
+
+        # Draw main text for original price
+        draw.text((start_x, orig_y), prefix_text, font=font_body, fill=color_ghost)
+        draw.text((start_x + prefix_w, orig_y), price_val_text, font=font_body, fill=color_ghost)
         draw.line(
             [(start_x + prefix_w - 4, strikethrough_y), (start_x + total_w + 4, strikethrough_y)], 
-            fill=(148, 163, 184, 255), 
+            fill=color_ghost, 
             width=4
         )
 

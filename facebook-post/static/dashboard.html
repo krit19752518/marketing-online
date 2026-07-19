@@ -648,6 +648,15 @@
           <span id="pageInfo">Page 1</span>
           <button id="nextPage" class="btn-secondary">Next</button>
         </div>
+
+        <!-- Line break to push search to the next line -->
+        <div style="flex-basis: 100%; height: 0; margin: 0;"></div>
+
+        <div class="control-group" style="width: 100%; max-width: 600px;">
+          <label for="searchDescription">ค้นหารายละเอียดสินค้า:</label>
+          <input type="text" id="searchDescription" placeholder="พิมพ์คำสำคัญในรายละเอียดสินค้าเพื่อค้นหา..." style="flex: 1; min-width: 250px; background: var(--bg-color); border: 1px solid var(--border-color); color: var(--text-primary); padding: 8px 12px; border-radius: 8px; outline: none; font-family: inherit; font-size: 0.9rem;" />
+          <button type="button" id="searchBtn" class="btn-secondary" style="padding: 8px 16px;">ค้นหา</button>
+        </div>
       </div>
 
       <!-- Grid of Cards -->
@@ -761,9 +770,11 @@
       async function load() {
         const statusVal = document.getElementById('status').value;
         const campaignVal = document.getElementById('campaign').value;
+        const searchVal = document.getElementById('searchDescription').value;
         const qparts = [];
         if (statusVal) qparts.push('status=' + encodeURIComponent(statusVal));
         if (campaignVal) qparts.push('campaign=' + encodeURIComponent(campaignVal));
+        if (searchVal) qparts.push('search=' + encodeURIComponent(searchVal));
         qparts.push('limit=' + limit);
         qparts.push('offset=' + (page * limit));
         const q = qparts.length ? ('?' + qparts.join('&')) : '';
@@ -826,7 +837,9 @@
           
           const title = el('div', 'card-title');
           title.textContent = c.title || c.itemid;
-          title.style.webkitLineClamp = '1';
+          title.style.display = 'block';
+          title.style.webkitLineClamp = 'unset';
+          title.style.overflow = 'visible';
           midInfo.appendChild(title);
           
           // Price info
@@ -848,6 +861,33 @@
             pr.appendChild(db);
           }
           midInfo.appendChild(pr);
+
+          // Affiliate link info
+          const linkRow = el('div');
+          linkRow.style.fontSize = '0.8rem';
+          linkRow.style.marginTop = '6px';
+          linkRow.style.display = 'flex';
+          linkRow.style.flexDirection = 'column';
+          linkRow.style.gap = '2px';
+          const affLink = c.product_short_link || c.product_link || '';
+          if (affLink) {
+              const affLabel = el('span');
+              affLabel.style.color = 'var(--text-secondary)';
+              affLabel.style.fontWeight = '600';
+              affLabel.textContent = 'Affiliate Link: ';
+              
+              const affAnchor = el('a');
+              affAnchor.href = affLink;
+              affAnchor.target = '_blank';
+              affAnchor.style.color = 'var(--info)';
+              affAnchor.style.textDecoration = 'underline';
+              affAnchor.style.wordBreak = 'break-all';
+              affAnchor.textContent = affLink;
+              
+              linkRow.appendChild(affLabel);
+              linkRow.appendChild(affAnchor);
+              midInfo.appendChild(linkRow);
+          }
           cardEl.appendChild(midInfo);
 
           // Section 3: Caption preview block (Caption & Note)
@@ -975,16 +1015,16 @@
             });
           } else {
             // Regular FB caption text area rendering
-            const capWrapper = el('div', 'caption-wrapper');
-            
-            const caption = el('div', 'caption-preview');
-            caption.style.marginBottom = '0px';
-            caption.style.height = '200px'; // Expanded to ~10 lines
-            caption.style.paddingRight = '55px'; // Leave room for copy button
-            caption.innerHTML = formatCaption(c.ai_caption);
-            capWrapper.appendChild(caption);
-
             if (c.ai_caption) {
+              const capWrapper = el('div', 'caption-wrapper');
+              
+              const caption = el('div', 'caption-preview');
+              caption.style.marginBottom = '0px';
+              caption.style.height = '200px'; // Expanded to ~10 lines
+              caption.style.paddingRight = '55px'; // Leave room for copy button
+              caption.innerHTML = formatCaption(c.ai_caption);
+              capWrapper.appendChild(caption);
+
               const copyBtn = el('button', 'copy-btn');
               copyBtn.textContent = 'Copy';
               copyBtn.addEventListener('click', (e) => {
@@ -994,9 +1034,8 @@
                 setTimeout(() => { copyBtn.textContent = 'Copy'; }, 2000);
               });
               capWrapper.appendChild(copyBtn);
+              capBlock.appendChild(capWrapper);
             }
-
-            capBlock.appendChild(capWrapper);
           }
 
           if (c.reviewer_note) {
@@ -1791,6 +1830,13 @@
 
       document.getElementById('status').addEventListener('change', () => { page = 0; load(); });
       document.getElementById('campaign').addEventListener('change', () => { page = 0; load(); });
+      document.getElementById('searchBtn').addEventListener('click', () => { page = 0; load(); });
+      document.getElementById('searchDescription').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          page = 0;
+          load();
+        }
+      });
       document.getElementById('uploadBtn').addEventListener('click', async () => {
         const input = document.getElementById('csvfile');
         if (!input.files || input.files.length === 0) { alert('Choose a CSV file'); return; }

@@ -1,1 +1,0 @@
-Filtering complete. Total rows: 1000000, Saved: 479430

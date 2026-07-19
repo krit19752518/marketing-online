@@ -1,10 +1,40 @@
+1  2  3  4  5  6   7    8    9
+
+1  1  2  3  5  8  13  21  34
+
+2  2  4  6  10  16  26  42  
+
+32
+
+--------- Manga prompt generator -------------
+
+cd ~/my-office/manga-project
+source ../.venv/bin/activate
+../.venv/bin/streamlit run app.py
+
+Local URL: http://localhost:8501
+
+----------------------------------------------
+
+
 https://www.037hddmovie.com/
 
+------------------  Ollama  ---------------------------
+docker run -d --gpus=all --name ollama -v ollama:/root/.ollama -p 11434:11434 --restart always ollama/ollama
 
+Local AI Ollama
+http://localhost:8080
+---------------------------------------------------------
 cd ~/my-office/discord-ollama-bot
 python3 bot.py
 
+---------------------- baccarat -----------------------------------
+cd /home/krit/my-office/baccarat
+python3 -m http.server 8000
 
+http://localhost:8000
+
+---------------------------------------------------------
 ratedeedee@gmail.com
 https://www.facebook.com/groups/1320485760213225/?locale=th_TH
 
@@ -28,17 +58,28 @@ https://discord.com/oauth2/authorize?client_id=1512429048167665685&permissions=7
 Token
 YOUR_DISCORD_TOKEN
 
+
 วิธีเปิดไฟล์ antigravity
 cd ~/Downloads/Antigravity/Antigravity-x64
 ./antigravity --no-sandbox --disable-gpu --ozone-platform=x11
 
 
---------- Dashboard ----------------------
+--------------------------------------- Dashboard Shopee Product ---------------------------------------------------
 cd my-office/facebook-post
 ./.venv/bin/python app.py
 
+cd /home/krit/my-office/facebook-post && ./.venv/bin/python app.py
+
 http://127.0.0.1:5000/
 
+รัน script Import 3GB
+cd /home/krit/my-office/shopee-data && ../.venv/bin/python process_shopee_data.py
+
+ดู log
+watch -n 1 cat /home/krit/my-office/shopee-data/process_progress.txt
+
+ลบข้อมูลใน sqLite
+sqlite3 /home/krit/my-office/facebook-post/facebook-post.db "DELETE FROM shopee_affiliate_cards; DELETE FROM ai_prompt_history; DELETE FROM shopee_price_history; VACUUM;"
 ---------- Facebook message run -------------
 ngrok http 5000
 🔗 Callback URL: https://goldfish-bok-gratified.ngrok-free.dev/webhook
@@ -92,8 +133,7 @@ Password: n8n_secure_pass_2026
 
 https://www.photopea.com/
 
-Local AI Ollama
-http://localhost:8080
+
 
 n8n
 http://localhost:5678/
