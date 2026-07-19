@@ -3,8 +3,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiService {
-  // POS-Raykha Python FastAPI port is 8001
-  static const String baseUrl = "http://localhost:8001/api/raykha";
+  // POS-Raykha Python FastAPI port is 8002
+  static const String baseUrl = "http://localhost:8002/api/raykha";
 
   static Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
