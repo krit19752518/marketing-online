@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg-binary==3.3.4
+python-dotenv
+httpx
+pydantic
+python-jose[cryptography]
+passlib[bcrypt]
